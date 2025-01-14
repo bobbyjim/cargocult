@@ -3,17 +3,37 @@ A DSL compiler for the Commander X16, written in Raku
 
 # BNF
 ```
-   program       ::= { declaration }.
-   declaration   ::= varDecl | funcDecl | structDecl.
-   varDecl       ::= "var" identifier ":" type [ "@" address ] "=" expression ";".
-   funcDecl      ::= "function" identifier "(" [paramList] ")" ":" type block.
-   structDecl    ::= "struct" identifier "{" { varDecl } "}".
-   block         ::= "{" { statement } "}".
-   statement     ::= assignment | funcCall | asmBlock | returnStmt | block.
-   assignment    ::= identifier "=" expression ";".
-   funcCall      ::= identifier "(" [expressionList] ")" ";".
-   asmBlock      ::= "asm" block.
-   returnStmt    ::= "return" expression ";".
+<program> ::= <main-file> | <package-declarations>+
+
+<main-file> ::= @include <file>+ <top-level-code>
+
+<top-level-code> ::= <statement>+
+<statement> ::= <declaration> | <expression> | <function-call> | <print-statement> | <package-call>
+
+<declaration> ::= <type> <variable-name> : <type> = <expression>
+<type> ::= uint8 | uint16 | uint32 | int8 | int16 | int32 | char | void
+<variable-name> ::= <identifier>
+<function-call> ::= <identifier> ( <argument-list>? )
+<expression> ::= <identifier> | <literal> | <expression> <operator> <expression> | <function-call> 
+<literal> ::= <number> | <string> | <boolean>
+<operator> ::= + | - | * | / | == | != | < | <= | > | >=
+<identifier> ::= [a-zA-Z_][a-zA-Z0-9_]*
+<argument-list> ::= <expression> ( , <expression> )*
+<print-statement> ::= print ( <expression> )
+<package-call> ::= <package-name>.<function-name> ( <argument-list>? )
+
+<package-declarations> ::= <package-declaration>+
+<package-declaration> ::= package <package-name> { <package-body> }
+<package-name> ::= <identifier>
+<package-body> ::= <declaration>* <function>*
+<function> ::= function <function-name> ( <parameter-list>? ) : <type> { <function-body> }
+<function-name> ::= <identifier>
+<parameter-list> ::= <parameter> ( , <parameter> )*
+<parameter> ::= <type> <parameter-name> : <type>
+<parameter-name> ::= <identifier>
+<function-body> ::= <statement>*
+<package-call> ::= <package-name>.<function-name> ( <argument-list>? )
+
 ```
 # Features
 ## Strong Typing
