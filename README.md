@@ -2,31 +2,32 @@
 A DSL compiler for the Commander X16, written in Raku
 
 # BNF
-program       ::= { declaration }.
-declaration   ::= varDecl | funcDecl | structDecl.
-varDecl       ::= "var" identifier ":" type [ "@" address ] "=" expression ";".
-funcDecl      ::= "function" identifier "(" [paramList] ")" ":" type block.
-structDecl    ::= "struct" identifier "{" { varDecl } "}".
-block         ::= "{" { statement } "}".
-statement     ::= assignment | funcCall | asmBlock | returnStmt | block.
-assignment    ::= identifier "=" expression ";".
-funcCall      ::= identifier "(" [expressionList] ")" ";".
-asmBlock      ::= "asm" block.
-returnStmt    ::= "return" expression ";".
-
+```
+   program       ::= { declaration }.
+   declaration   ::= varDecl | funcDecl | structDecl.
+   varDecl       ::= "var" identifier ":" type [ "@" address ] "=" expression ";".
+   funcDecl      ::= "function" identifier "(" [paramList] ")" ":" type block.
+   structDecl    ::= "struct" identifier "{" { varDecl } "}".
+   block         ::= "{" { statement } "}".
+   statement     ::= assignment | funcCall | asmBlock | returnStmt | block.
+   assignment    ::= identifier "=" expression ";".
+   funcCall      ::= identifier "(" [expressionList] ")" ";".
+   asmBlock      ::= "asm" block.
+   returnStmt    ::= "return" expression ";".
+```
 # Features
 ## Strong Typing
 Variables and functions have explicit types, which translates well to the 6502's needs for predictable memory and data handling.
 
-   var score: uint16 = 42;
+``   var score: uint16 = 42;``
 
 ## Block Delimiters with Braces
 {} for blocks makes parsing straightforward and eliminates ambiguities.
-
+```
    function calculate(x: uint8, y: uint8): uint16 {
       return x + y;
    }
-
+```
 ## Assignment with =
 Matches convention in most languages, intuitive to use.
 
@@ -44,33 +45,33 @@ Uses types that map directly to the 6502's strengths:
 ## Memory Management
 Introduce explicit memory location constructs for fine control:
 
-   var spriteX: uint8 @ $0400;  // Bind variable to specific memory address
+``   var spriteX: uint8 @ $0400;  // Bind variable to specific memory address``
 
 ## Inline Assembly
 Provide a way to insert raw 6502 assembly for low-level control:
-
+```
    asm {
       LDA #$01
       STA $D020
    }
-
+```
 ## Structs
-
+```
    struct Point {
       x: uint16;
       y: uint16;
    }
 
    var position: Point = { x: 10, y: 20 };
-
+```
 
 ## Arrays
 
-   var highScores: uint16[10] = [100, 200, 300];
+``   var highScores: uint16[10] = [100, 200, 300];``
 
 ## Sweet 16 Integration
 Incorporate Sweet 16 for handling larger computations seamlessly:
-
+```
    function multiply(x: uint16, y: uint16): uint16 {
        sweet16 {
           LDI x
@@ -78,7 +79,7 @@ Incorporate Sweet 16 for handling larger computations seamlessly:
        }
        return %S16_RESULT;
    }
-
+```
 # Goals
 Ease of Compilation to 6502 Assembly:
 * Use types and constructs that map naturally to 6502 architecture (e.g., integral types like uint8, int8, uint16, int16).
@@ -91,5 +92,5 @@ Readable and Enjoyable Syntax:
 * Include modern conveniences (e.g., inline assembly, arrays, structs, functions).
 
 Approachable Language Paradigm:
-*Draw inspiration from established paradigms like Pascal, C, or Python for familiarity.
-*Keep the syntax simple but allow for extensibility if needed.
+* Draw inspiration from established paradigms like Pascal, C, or Python for familiarity.
+* Keep the syntax simple but allow for extensibility if needed.
