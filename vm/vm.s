@@ -17,10 +17,11 @@ KERNAL_CHROUT = $FFD2
 
     .global _start
 _start:
-    LDA #<(test_program)
+    LDA #<(test_program)  ; test program
     STA PC
     LDA #>(test_program)
     STA PC+1
+    BRA interpreter       ; ok let's run the test
 
 interpreter:
     LDA #58               ; ':'
@@ -32,6 +33,77 @@ interpreter:
     INC PC                ; Move to the next opcode   
     JMP (opcode_table, X) ; Jump to the address stored at opcode_table[X]
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+HCF = 64                ;
+PAD = 65                ;           HERE'S ALL OUR OPCODES
+SAY = 66                ;
+SHD = 67                ;
+JPA = 68                ;
+JPZ = 69                ;
+JNZ = 70                ;
+ADD = 71                ;
+SUB = 72                ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+say_opcode:
+    ; Print character param at PC
+    LDA (PC)           ; read param
+    INC PC             ; consume param
+    JSR KERNAL_CHROUT
+pad_opcode:            ; No operation (do nothing)
+    BRA interpreter
+
+jpa_opcode:
+    LDA (PC)           ; read low byte param
+    INC PC             ; consume param
+    TAX                ; and store it in X
+    LDA (PC)           ; read hi byte param
+    INC PC             ; consume param
+    TAY                ; and store it in Y
+    STX PC             ; store that in PC
+    STY PC+1           ; goes into PC+1    
+    BRA interpreter
+
+; something wrong with it!!!
+jpz_opcode:
+    BNE interpreter    ; If Zero flag is not set, skip
+    BRA jpa_opcode     ; continue processing
+
+jnz_opcode:
+    BEQ interpreter    ; If Zero flag is set, skip
+    BRA jpa_opcode     ; continue processing
+
+;
+;   ADD P1 + P2 -> A
+;
+add_opcode:
+    LDA (PC)           ; load operand from memory
+    INC PC             ; consume param
+    CLC                ; clear the carry flag
+    ADC (PC)           ; add the next byte 
+    INC PC             ; consume param
+    STA R0             ; for inspection
+    BRA interpreter    ; continue processing
+
+; UNTESTED
+;
+;   SUB P1 - P2 -> A
+;
+sub_opcode:
+    LDA (PC)           ; load operand from memory
+    INC PC             ; consume param
+    SEC                ; set the carry flag for subtraction
+    SBC (PC)           ; subtract the next byte 
+    INC PC             ; consume param
+    STA R1             ; for inspection
+    BRA interpreter    ; continue processing
+
+halt_program:
+    RTS                ; Halt program (could be an infinite loop or HCF operation)
+
+shutdown_opcode:
+    RTS                ; Soft reset or shutdown (could be a "JMP $FFFF" for system halt)
+
 opcode_table:
     .addr 0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0   ; 0-15
     .addr 0, 0, 0, 0, 0, 0, 0, 0,   0, 0, 0, 0, 0, 0, 0, 0   ; 16-31
@@ -41,47 +113,19 @@ opcode_table:
     .addr pad_opcode      ; 65 PAD
     .addr say_opcode      ; 66 SAY
     .addr shutdown_opcode ; 67 SHD
-    .addr jmp_opcode      ; 68 JMP
-
-halt_program:
-    RTS                ; Halt program (could be an infinite loop or HCF operation)
-
-pad_opcode:            ; No operation (do nothing)
-    JMP interpreter
-
-say_opcode:
-    ; Print character param at PC
-    LDA (PC)
-    JSR KERNAL_CHROUT
-    INC PC
-    JMP interpreter
-
-shutdown_opcode:
-    RTS                ; Soft reset or shutdown (could be a "JMP $FFFF" for system halt)
-
-jmp_opcode:
-    LDA (PC)           ; read low byte param
-    TAX                ; and store it in X
-    INC PC             ; next byte in input
-    LDA (PC)           ; read hi byte param
-    TAY                ; and store it in Y
-    STX PC             ; store that in PC
-    STY PC+1           ; goes into PC+1    
-    JMP interpreter
-
-print_char:
-    ; Print character in A register
-    JSR KERNAL_CHROUT 
-    JMP interpreter
+    .addr jpa_opcode      ; 68 JPA
+    .addr jpz_opcode      ; 69 JPZ
+    .addr jnz_opcode      ; 70 JNZ
+    .addr add_opcode      ; 71 ADD
+    .addr sub_opcode      ; 72 SUB
 
 test_program:
-    .byte 68                    ; D:JMP 
+    .byte ADD, 3, 1             ; :G
+    .byte SUB, 3, 1             ; :H
+    .byte JPZ                   ; 
        .addr test_program_cont
 test_program_cont:    
-    .byte 66                    ; B:SAY
-        .byte 66                ; 'B'
-    .byte 66                    ; B:SAY
-        .byte 65                ; 'A'
-    .byte 65                    ; A:PAD
-    .byte 64                    ; @:HCF
-
+    .byte SAY, 66               ; :BB
+    .byte SAY, 65               ; :BA
+    .byte PAD                   ; :A
+    .byte HCF                   ; :@
