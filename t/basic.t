@@ -1,10 +1,10 @@
-use lib 'lib';
 use Test;
+use lib 'lib';
 use CargoCult;
 
 my $code = q{
-    var x: uint8;
-    var y: int16;
+    var x: ubyte;
+    var y: int;
 };
 
 plan 2;
@@ -12,8 +12,8 @@ plan 2;
 {
    my $result = CargoCultGrammar.parse($code, :actions(CargoCultActions));
    my $expected = [
-     { name => "x", type => "uint8" },
-     { name => "y", type => "int16" }
+     { name => "x", type => "ubyte" },
+     { name => "y", type => "int" }
    ];
    ok $result, "Grammar parses variable declarations";
    #diag $result.perl; # For debugging, make sure it's actually being parsed
