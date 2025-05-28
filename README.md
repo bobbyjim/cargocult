@@ -17,34 +17,36 @@ banked memory referencing (nearly) for free.
 * No Memory allocation.
 * No Real number support.
 
-# MVP
+# CURRENT
 
 * IDENTIFICATION DIVISION.
 * PROGRAM-ID. <name>.
+
 * DATA DIVISION.
 * WORKING-STORAGE SECTION.
-* UINT8 declarations.
+* INT8, INT16, INT32, UINT8, UINT16, UINT32, STRING declarations.
+
 * PROCEDURE DIVISION.
 * assignment with := 
 * SAY
-* Add, Subtract, Multiply, Divide ops.
+* Arithmetic binops with precedence (* / %) and (+ -)
+* Compare binops < > <= >= == !=
+* IF THEN ELSIF ELSE END
+
 * END PROGRAM.
 
-# Version 2
+# TO BE DONE
 
-* PROC 
-* control flow
-* string
-* Records (structures)
-* REFAT or equivalent
-
-# Version 3
-
+* Compound conditions (&& ||) 
+* Nested IFs
+* WHILE
+* REPEAT / UNTIL
+* FOR
+* CASE
+* BANK-STORAGE SECTION for holding references to banked data
+* Arrays
+* PROC or function calls
 * Named parameter lists for procs.
-* Five more types supported: int8_t, int16_t, int32_t, uint16_t, uint32_t.
-* Bitfields supported inside Records.
-
-# Version 4
-
+* Records (structures)
+* Bitfields inside Records or a special type of Record.
 * Fixed-point type: fixed8_8_t.
-
