@@ -19,7 +19,7 @@ unit class Xenober16::ASTBuilder;
     method data-division($/) {
         make {
             type => "data",
-            storage => $<working-storage-section>.made
+            storage => $<working-storage-section>:exists ?? $<working-storage-section>.made !! Nil
         };
     }
 
@@ -54,6 +54,9 @@ unit class Xenober16::ASTBuilder;
     }
     
     method say($/) {
+        if !$<expression> {
+            die "SAY statement must have an expression";
+        }
         make {
             type  => "say",
             value => $<expression>.made
@@ -66,6 +69,9 @@ unit class Xenober16::ASTBuilder;
             my $str = $raw.substr(1, $raw.chars - 2); # remove quotes
             make { type => "string", value => $str };
         } 
+        elsif $<compare-expr> {
+            make $<compare-expr>.made;
+        }
         elsif $<arith-expr> {
             make $<arith-expr>.made;
         } 
@@ -78,6 +84,12 @@ unit class Xenober16::ASTBuilder;
     }
 
     method arith-expr($/) {
+        if !$<term> {
+            die "Arithmetic expression must have at least one term";
+        }
+        if $<add-op> && $<add-op>.elems != $<term>.elems - 1 {
+            die "Number of add operators must be one less than number of terms";
+        }
         my $lhs = $<term>[0].made;
 
         for $<add-op>.kv -> $i, $op {
@@ -94,6 +106,9 @@ unit class Xenober16::ASTBuilder;
     }
 
     method term($/) {
+        if !$<factor> {
+            die "Term must have at least one factor";
+        }
         my $lhs = $<factor>[0].made;
 
         for $<mul-op>.kv -> $i, $op {
@@ -110,6 +125,9 @@ unit class Xenober16::ASTBuilder;
     }
 
     method factor($/) {
+        if !$<literal> && !$<identifier> && !$<arith-expr> {
+            die "Factor must be a literal, identifier, or arithmetic expression";
+        }
         if $<literal> {
             make { type => "literal", value => +$<literal> };
         } 
@@ -120,3 +138,81 @@ unit class Xenober16::ASTBuilder;
             make $<arith-expr>.made;
         }
     }
+
+    method compare-expr($/) {
+        if !$<arith-expr> || $<arith-expr>.elems != 2 {
+            die "Comparison expression must have exactly two arithmetic expressions";
+        }
+        if !$<compare-op> {
+            die "Comparison expression must have a comparison operator";
+        }
+        if $<compare-op> {
+            make {
+                type => "binop",                    # or "compare" could be used here?
+                lhs  => $<arith-expr>[0].made,
+                op   => ~$<compare-op>,
+                rhs  => $<arith-expr>[1].made
+            };
+        } else {
+            make $<arith-expr>[0].made; # No comparison, just return the first expression
+        }
+    }
+
+    method if-statement($/) {
+        if !$<expression> {
+            die "IF statement must have a condition";
+        }
+        if !$<statement-sequence> {
+            die "IF statement must have a statement sequence";
+        }
+        if !$<end-token> {
+            die "IF statement must end with END";
+        }
+        if !$<then-token> {
+            die "IF statement must have a THEN token";
+        }
+        my $elsif = $<elsif-clause>:exists ?? $<elsif-clause>».made !! [];
+        my $else  = $<else-clause>:exists  ?? $<else-clause>.made   !! Nil;
+
+
+        # Create the AST node for the if statement
+        make {
+            type => "if",
+            condition => $<expression>.made,
+            then => $<statement-sequence>.made,
+            elsif => $elsif,
+            else => $else
+        };
+    }
+
+    method elsif-clause($/) {
+        if !$<expression> {
+            die "ELSIF clause must have a condition";
+        }
+        if !$<statement-sequence> {
+            die "ELSIF clause must have a statement sequence";
+        }
+        if !$<then-token> {
+            die "ELSIF clause must have a THEN token";
+        }
+        make {
+            type => "elsif",
+            condition => $<expression>.made,
+            then => $<statement-sequence>.made
+        };
+    }
+
+    method else-clause($/) {
+        if !$<statement-sequence> {
+            die "ELSE clause must have a statement sequence";
+        }
+        make {
+            type => "else",
+            statements => $<statement-sequence>.made
+        };
+    }
+
+    method statement-sequence($/) {
+        make $<statement>».made;
+    }
+

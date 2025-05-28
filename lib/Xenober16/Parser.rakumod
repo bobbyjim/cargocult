@@ -27,6 +27,7 @@ grammar Xenober16::Parser {
 	token data-type { 'INT8' :i | 'UINT8' :i | 'INT16' :i | 'UINT16' :i | 'INT32' :i | 'UINT32' :i | 'STRING' :i }
 	token add-op { '+' | '-' }
 	token mul-op { '*' | '/' | '%' }
+	token compare-op { '==' | '<' | '>' | '<=' | '>=' | '!=' }
 
 	rule identification-division {
 		<identification-token>
@@ -60,7 +61,7 @@ grammar Xenober16::Parser {
 		'SAY' <expression> ';'
 	}
 	rule expression {
-		<string-literal> | <arith-expr>
+		<compare-expr> | <string-literal> | <arith-expr>
 	}
 
 	rule arith-expr {
@@ -73,6 +74,10 @@ grammar Xenober16::Parser {
 
 	rule factor {
 		<literal> | <identifier> | '(' <arith-expr> ')'
+	}
+
+	rule compare-expr {
+		<arith-expr> <compare-op> <arith-expr>
 	}
 
 	rule if-statement {
@@ -89,7 +94,7 @@ grammar Xenober16::Parser {
 	rule else-clause {
 		<else-token> <statement-sequence>
 	}
-
+	
 	rule statement-sequence {
 		<statement>+
 	}

@@ -13,12 +13,12 @@ sub MAIN(Str $file) {
 	# Check if the parse was successful
 	if $result {
 		my $ast = $result.made;
- 		#say $ast;
-		my $interpreter = Xenober16::Interpreter.new;
-		$interpreter.run($ast);
-		say "Program executed successfully!";
+ 	 	say $ast;
+	 	my $interpreter = Xenober16::Interpreter.new;
+	 	$interpreter.run($ast);
+	 	say "Program executed successfully!";
 	} else {
-		say "Parse failed!";
+	 	say "Parse failed!";
 	}
 
 }

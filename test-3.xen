@@ -1,0 +1,23 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HelloWorld.
+
+DATA DIVISION.
+
+WORKING-STORAGE SECTION.
+  message: UINT8;
+  anotherMessage: STRING;
+
+PROCEDURE DIVISION.
+   message := 65;
+
+   IF message > 60
+   THEN
+       SAY message;
+   ELSIF message > 50
+   THEN
+       SAY "greater than 50";
+   ELSE
+       SAY "less than 51";
+   END
+
+END PROGRAM.
