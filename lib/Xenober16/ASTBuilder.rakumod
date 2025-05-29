@@ -67,7 +67,7 @@ unit class Xenober16::ASTBuilder;
         if $<string-literal> {
             my $raw = ~$<string-literal>;
             my $str = $raw.substr(1, $raw.chars - 2); # remove quotes
-            make { type => "string", value => $str };
+            make { type => "string-literal", value => $str };
         } 
         elsif $<compare-expr> {
             make $<compare-expr>.made;
@@ -75,8 +75,8 @@ unit class Xenober16::ASTBuilder;
         elsif $<arith-expr> {
             make $<arith-expr>.made;
         } 
-        elsif $<literal> {
-            make { type => "literal", value => +$<literal> };
+        elsif $<number> {
+            make { type => "number", value => +$<number> };
         } 
         elsif $<identifier> {
             make { type => "identifier", name => ~$<identifier> };
@@ -125,11 +125,11 @@ unit class Xenober16::ASTBuilder;
     }
 
     method factor($/) {
-        if !$<literal> && !$<identifier> && !$<arith-expr> {
-            die "Factor must be a literal, identifier, or arithmetic expression";
+        if !$<number> && !$<identifier> && !$<arith-expr> {
+            die "Factor must be a number, identifier, or arithmetic expression";
         }
-        if $<literal> {
-            make { type => "literal", value => +$<literal> };
+        if $<number> {
+            make { type => "number", value => +$<number> };
         } 
         elsif $<identifier> {
             make { type => "identifier", name => ~$<identifier> };
@@ -148,7 +148,7 @@ unit class Xenober16::ASTBuilder;
         }
         if $<compare-op> {
             make {
-                type => "binop",                    # or "compare" could be used here?
+                type => "compare",                   
                 lhs  => $<arith-expr>[0].made,
                 op   => ~$<compare-op>,
                 rhs  => $<arith-expr>[1].made

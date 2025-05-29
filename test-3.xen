@@ -9,10 +9,14 @@ WORKING-STORAGE SECTION.
 
 PROCEDURE DIVISION.
    message := 65;
+   anotherMessage := "hello, world!";
+
+   message := message + 5;
+   SAY anotherMessage;
 
    IF message > 60
-   THEN
-       SAY message;
+   Then
+       SAY "greater than 60";
    ELSIF message > 50
    THEN
        SAY "greater than 50";

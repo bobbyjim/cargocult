@@ -2,6 +2,10 @@ unit class Xenober16::Interpreter;
 
 has %!env;  # Symbol table for variables
 
+method trace($msg) {        # to control the debug output
+    #say $msg;
+}
+
 # Entry point
 method run($ast) {
     self.handle-program($ast);
@@ -15,14 +19,14 @@ method handle-program($program) {
 }
 
 method handle-identification($id) {
-    say "Program Name: ", $id<name>;
+    self.trace( "Program Name: " ~ $id<name> );
 }
 
 method handle-data($data) {
     for $data<storage>.flat -> $decl {
         my $name = $decl<identifier>;
         my $type = $decl<data_type>;
-		say " - Declaring variable: $name of type $type";
+		self.trace( " - Declaring variable: $name of type $type" );
         # You could initialize based on $type, but we'll just use 0 for now
         %!env{$name} = 0;
     }
@@ -41,14 +45,15 @@ method handle-statement($stmt) {
             %!env{$stmt<name>} = $val;
         }
         when 'say' {
-            say self.evaluate($stmt<value>);
+            my $val = self.evaluate($stmt<value>);
+            say $val.defined ?? $val !! "(undef)";
         }
         when 'if' {
-            say "Handling IF statement";
-            say "Condition: ", $stmt<condition>.perl;  # Debugging output
+            self.trace( "Handling IF statement" );
+            self.trace( "Condition: " ~ $stmt<condition>.perl );  # Debugging output
 
             my $condition = self.evaluate($stmt<condition>);
-            say "Condition evaluated to: ", $condition.perl;  # Debugging output
+            self.trace( "Condition evaluated to: " ~ $condition.perl);  # Debugging output
 
             if $condition {
                 for $stmt<then>.flat -> $then_stmt {
@@ -57,10 +62,10 @@ method handle-statement($stmt) {
             } 
             else {
                 my $handled = False;
-                say "Condition was false, checking ELSIFs";
-                for $stmt<elsif>.flat -> $else_stmt {
-                    if self.evaluate($else_stmt<condition>) {
-                        for $else_stmt<then>.flat -> $elsif_stmt {
+                self.trace( "Condition was false, checking ELSIFs" );
+                for ($stmt<elsif> // []).flat -> $elsif_clause {
+                    if self.evaluate($elsif_clause<condition>) {
+                        for $elsif_clause<then>.flat -> $elsif_stmt {
                             self.handle-statement($elsif_stmt);
                         }
                         $handled = True;
@@ -68,7 +73,7 @@ method handle-statement($stmt) {
                     }
                 }
                 if ($handled == False) && $stmt<else> {
-                    say "Handling ELSE statement";
+                    self.trace( "Handling ELSE statement" );
                     for $stmt<else><statements>.flat -> $else_stmt {
                         self.handle-statement($else_stmt);
                     }
@@ -82,18 +87,18 @@ method handle-statement($stmt) {
 }
 
 method evaluate($expr) {
-    say "Evaluating: ", $expr.perl;  # Debugging output
-    say " - type is: ", $expr<type>;  # Debugging output
+    self.trace( "Evaluating: " ~ $expr.perl  );  # Debugging output
+    self.trace( " - type is: " ~ $expr<type> );  # Debugging output
 
     # Handle different expression types
     given $expr<type> {
-        when 'literal'    { return $expr<value> }
-        when 'string'     { return $expr<value> }
+        when 'number'    { return $expr<value> }
+        when 'string-literal'     { return $expr<value> }
         when 'identifier' {
             my $name = $expr<name>;
             return %!env{$name} // die "Undefined variable '$name'";
         }
-        when 'binop' {
+        when 'compare' {
             my $lhs  = self.evaluate($expr<lhs>);
             my $rhs = self.evaluate($expr<rhs>);
             given $expr<op> {
@@ -103,6 +108,13 @@ method evaluate($expr) {
                 when '>'  { return $lhs > $rhs }
                 when '<=' { return $lhs <= $rhs }
                 when '>=' { return $lhs >= $rhs }
+                default   { die "Unknown comparison operator: {$expr<op>}" }
+            }
+        }
+        when 'binop' {
+            my $lhs  = self.evaluate($expr<lhs>);
+            my $rhs = self.evaluate($expr<rhs>);
+            given $expr<op> {
                 when '+'  { return $lhs + $rhs }
                 when '-'  { return $lhs - $rhs }
                 when '*'  { return $lhs * $rhs }
@@ -111,13 +123,8 @@ method evaluate($expr) {
                 default   { die "Unknown operator: {$expr<op>}" }
             }
         }
-        when 'group' {
-            return self.evaluate($expr<inner>);
-        }
         default {
             die "Unknown expression: " ~ dd $expr;
         }
     }
-
-
 }

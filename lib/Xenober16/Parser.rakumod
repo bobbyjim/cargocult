@@ -1,3 +1,51 @@
+#
+#  THINGS TO ADD:
+#
+#  # control flow:
+#  WHILE DO END
+#  REPEAT UNTIL
+#  FOR DO END
+#  CASE (numeric, more like C than Oberon) END
+#
+#  a: char[80];												# arrays
+#  a: char[80] := "Hello";									# array assignment
+#  PROC myProc(...) ... END									# procedure declaration, no return value
+#  FUNC myFunc(...): TYPE ... END							# function declaration, with return value
+#
+#  RECORD													# Record
+#	  myField1: char[10];
+#	  myField2: UINT16;
+#  END
+#
+#  BITRECORD												# Record with :N bitfields
+#	  myfield1: UINT8 :3;									# 3 bits
+#	  myfield2: UINT8 :5;									# 5 bits
+#  END
+#						
+#  CONST myConst := 3;  									# constant declaration
+#					
+#  include "filename";										# file inclusion pre-processor
+#	
+#  myReg := R0();  											# register fetch
+#  R0(3);          											# register assignment
+#  R0L(3); 	       											# register assignment (low byte)
+#
+#  ASM "inline assembly";
+#  ASM
+#     block of assembly code
+#     some more assembly code
+#  END
+#
+#  # not sure how to handle these yet, but they are important:
+#  myVar: PTR TO myRecord := PTR(bank: 3, addr: $A000);   	# banked pointer declaration
+#  myVar: myRecord := PTR(bank: 3, addr: $A000);   			# or is this better?
+#  myVar: PTR TO myRecord AT $0300;                       	# golden RAM pointer decl (no bank)
+#  myVar: myRecord AT $0300;                                # or is this better?
+#	
+#  BANK <N> SECTION.                                      	# or, implicitly banked variables declared here
+#     myVar: myRecord AT $A000;            		        	# banked auto-pointer declaration (bank in section decl)??
+#
+
 
 grammar Xenober16::Parser {
 	rule TOP {
@@ -15,19 +63,22 @@ grammar Xenober16::Parser {
 	token working-storage-token { 'WORKING-STORAGE SECTION.' }
 	token procedure-division-token { 'PROCEDURE DIVISION.' }
 	token end-program-token { 'END PROGRAM.' }
-	token if-token { 'IF' :i }
-	token then-token { 'THEN' :i }
-	token elsif-token { 'ELSIF' :i }
-	token else-token { 'ELSE' :i }
-	token end-token { 'END' :i }
+	token if-token { (IF|If|if) }
+	token then-token { (THEN|Then|then) }
+	token elsif-token { (ELSIF|Elsif|elsif) }
+	token else-token { (ELSE|Else|else) }
+	token end-token { (END|End|end) }
 
 	token identifier { <[a..zA..Z_]><[a..zA..Z0..9_]>* }
-	token literal { <[0..9]>+ 	}
+	token number { <[0..9]>+ 	}
+	token hex-literal { '$' <[0..9A..Fa..f]>+ }
 	token string-literal { '"' [ <-["]> | '\\' . ]* '"' }
 	token data-type { 'INT8' :i | 'UINT8' :i | 'INT16' :i | 'UINT16' :i | 'INT32' :i | 'UINT32' :i | 'STRING' :i }
 	token add-op { '+' | '-' }
 	token mul-op { '*' | '/' | '%' }
 	token compare-op { '==' | '<' | '>' | '<=' | '>=' | '!=' }
+
+    rule array-type { 'ARRAY' '[' <number> ']' 'OF' <data-type> ';' }
 
 	rule identification-division {
 		<identification-token>
@@ -73,7 +124,7 @@ grammar Xenober16::Parser {
 	}
 
 	rule factor {
-		<literal> | <identifier> | '(' <arith-expr> ')'
+		<number> | <identifier> | '(' <arith-expr> ')'
 	}
 
 	rule compare-expr {
