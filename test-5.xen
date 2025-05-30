@@ -1,0 +1,28 @@
+IDENTIFICATION DIVISION.
+PROGRAM-ID. HelloWorld.
+
+DATA DIVISION.
+
+WORKING-STORAGE SECTION.
+  message: UINT8;
+  anotherMessage: STRING;
+
+PROCEDURE DIVISION.
+
+   SAY "FOR loop test";
+   FOR message := 30 TO 1 BY -5
+   DO
+      SAY message;
+   END
+
+   IF message > 60
+   THEN
+       SAY "greater than 60";
+   ELSIF message > 50
+   THEN
+       SAY "greater than 50";
+   ELSE
+       SAY "less than 51";
+   END
+
+END PROGRAM.

@@ -3,7 +3,7 @@ unit class Xenober16::Interpreter;
 has %!env;  # Symbol table for variables
 
 method trace($msg) {        # to control the debug output
-    #say $msg;
+    say $msg;
 }
 
 # Entry point
@@ -49,11 +49,11 @@ method handle-statement($stmt) {
             say $val.defined ?? $val !! "(undef)";
         }
         when 'if' {
-            self.trace( "Handling IF statement" );
-            self.trace( "Condition: " ~ $stmt<condition>.perl );  # Debugging output
+            #self.trace( "Handling IF statement" );
+            #self.trace( "Condition: " ~ $stmt<condition>.perl );  # Debugging output
 
             my $condition = self.evaluate($stmt<condition>);
-            self.trace( "Condition evaluated to: " ~ $condition.perl);  # Debugging output
+            #self.trace( "Condition evaluated to: " ~ $condition.perl);  # Debugging output
 
             if $condition {
                 for $stmt<then>.flat -> $then_stmt {
@@ -62,7 +62,7 @@ method handle-statement($stmt) {
             } 
             else {
                 my $handled = False;
-                self.trace( "Condition was false, checking ELSIFs" );
+                #self.trace( "Condition was false, checking ELSIFs" );
                 for ($stmt<elsif> // []).flat -> $elsif_clause {
                     if self.evaluate($elsif_clause<condition>) {
                         for $elsif_clause<then>.flat -> $elsif_stmt {
@@ -73,7 +73,7 @@ method handle-statement($stmt) {
                     }
                 }
                 if ($handled == False) && $stmt<else> {
-                    self.trace( "Handling ELSE statement" );
+                    #self.trace( "Handling ELSE statement" );
                     for $stmt<else><statements>.flat -> $else_stmt {
                         self.handle-statement($else_stmt);
                     }
@@ -81,7 +81,7 @@ method handle-statement($stmt) {
             }
         }
         when 'while' {
-            self.trace( "Handling WHILE statement" );
+            #self.trace( "Handling WHILE statement" );
             while self.evaluate($stmt<condition>) {
                 for $stmt<body>.flat -> $body_stmt {
                     self.handle-statement($body_stmt);
@@ -89,7 +89,7 @@ method handle-statement($stmt) {
             }
         }
         when 'repeat' {
-            self.trace( "Handling REPEAT statement" );
+            #self.trace( "Handling REPEAT statement" );
             repeat {
                 for $stmt<body>.flat -> $body_stmt {
                     self.handle-statement($body_stmt);
@@ -99,16 +99,29 @@ method handle-statement($stmt) {
         when 'for' {
             my $start = self.evaluate($stmt<start>);
             my $end   = self.evaluate($stmt<end>);
-            my $by-expr  = $stmt<by-expression> ?? self.evaluate($stmt<by-expression>) !! 1;
+            my $step  = $stmt<step> ?? self.evaluate($stmt<step>) !! 1;
 
-            for $start .. $end -> $value {
-                %!env{$stmt<variable>} = $value;
-                for $stmt<body>.flat -> $body_stmt {
-                    self.handle-statement($body_stmt);
+            #self.trace( "Handling FOR loop: " ~ $stmt<variable> ~ " from " ~ $start.perl ~ " to " ~ $end.perl ~ " by " ~ $step.perl );
+
+            %!env{$stmt<variable>} = $start;
+            if $step > 0 {
+                while %!env{$stmt<variable>} <= $end {
+                    for $stmt<body>.flat -> $body-stmt {
+                        self.handle-statement($body-stmt);
+                    }
+                    %!env{$stmt<variable>} += $step;
                 }
-                #
-                # Don't forget to handle the BY expression
-                #
+            }
+            elsif $step < 0 {
+                while %!env{$stmt<variable>} >= $end {
+                    for $stmt<body>.flat -> $body-stmt {
+                        self.handle-statement($body-stmt);
+                    }
+                    %!env{$stmt<variable>} += $step;
+                }
+            }
+            else {
+                die "Step value cannot be zero";
             }
         }
         default {
@@ -118,8 +131,8 @@ method handle-statement($stmt) {
 }
 
 method evaluate($expr) {
-    self.trace( "Evaluating: " ~ $expr.perl  );  # Debugging output
-    self.trace( " - type is: " ~ $expr<type> );  # Debugging output
+    #self.trace( "Evaluating: " ~ $expr.perl  );  # Debugging output
+    #self.trace( " - type is: " ~ $expr<type> );  # Debugging output
 
     # Handle different expression types
     given $expr<type> {

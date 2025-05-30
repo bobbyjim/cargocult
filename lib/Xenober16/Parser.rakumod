@@ -1,10 +1,9 @@
 #
 #  THINGS TO ADD:
 #
+#  Negative numbers.
+#
 #  # control flow:
-#  WHILE DO END
-#  REPEAT UNTIL
-#  FOR DO END
 #  CASE (numeric, more like C than Oberon) END
 #
 #  a: char[80];												# arrays
@@ -75,12 +74,19 @@ grammar Xenober16::Parser {
 	token do-token { 'DO' }
 	token repeat-token { 'REPEAT' }
 	token until-token { 'UNTIL' }
+	token for-token { 'FOR' }
+	token to-token { 'TO' }
+	token by-token { 'BY' }
+	token say-token { 'SAY' }
 	token end-token { 'END' }
 	token semicolon { ';' }
 	token dot { '.' }
 	token colon { ':' }
 
 	token identifier { <[a..zA..Z_]><[a..zA..Z0..9_]>* }
+	#
+	#  We don't handle negative numbers yet.
+	#
 	token number { <digit-string> | <hex-string> }
 	token digit-string { <[0..9]>+ }
 	token hex-string   { '$' <[0..9A..Fa..f]>+ }	
@@ -118,12 +124,13 @@ grammar Xenober16::Parser {
 		| <if-statement> 
 		| <while-statement>
 		| <repeat-statement>
+		| <for-statement>
 	}
 	rule assignment {
 		<identifier> ':=' <expression> <semicolon>
 	}
 	rule say {
-		'SAY' <expression> <semicolon>
+		<say-token> <expression> <semicolon>
 	}
 	rule expression {
 		<compare-expr> | <string-literal> | <arith-expr>
@@ -175,4 +182,9 @@ grammar Xenober16::Parser {
 		<repeat-token> <statement-sequence> <until-token> <expression> <semicolon> <end-token>
 	}
 
+	rule for-statement {
+		<for-token> <identifier> ':=' <expression> <to-token> <expression>
+		[ <by-token> <expression> ]? 
+		<do-token> <statement-sequence> <end-token>
+	}
 }

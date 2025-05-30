@@ -74,13 +74,14 @@ StatementSequence = statement {";" statement}.
 IfStatement = IF expression THEN StatementSequence
     {ELSIF expression THEN StatementSequence}
     [ELSE StatementSequence] END.
-CaseStatement = CASE expression OF case {"|" case} END.
-case = [CaseLabelList ":" StatementSequence].
-CaseLabelList = LabelRange {"," LabelRange}.
-LabelRange = label [".." label].
-label = integer | string | qualident.
 WhileStatement = WHILE expression DO StatementSequence
     {ELSIF expression DO StatementSequence} END.
 RepeatStatement = REPEAT StatementSequence UNTIL expression.
 ForStatement = FOR ident ":=" expression TO expression [BY ConstExpression]
     DO StatementSequence END.
+
+CaseStatement = CASE expression OF case {"|" case} END.
+case = [CaseLabelList ":" StatementSequence].
+CaseLabelList = LabelRange {"," LabelRange}.
+LabelRange = label [".." label].
+label = integer | string | qualident.

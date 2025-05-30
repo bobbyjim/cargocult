@@ -195,7 +195,7 @@ method if-statement($/) {
     my $elsif = $<elsif-clause>:exists ?? $<elsif-clause>».made !! [];
     my $else  = $<else-clause>:exists  ?? $<else-clause>.made   !! Nil;
     # Create the AST node for the if statement
-    self.trace("Building IF AST with condition: " ~ ~$<expression>);
+    #self.trace("Building IF AST with condition: " ~ ~$<expression>);
     make {
         type => "if",
         condition => $<expression>.made,
@@ -245,7 +245,7 @@ method while-statement($/) {
     if !$<do-token> {
         die "WHILE statement must have a DO token";
     }
-    self.trace("Building WHILE AST with condition: " ~ ~$<expression>);
+    #self.trace("Building WHILE AST with condition: " ~ ~$<expression>);
     make {
         type => "while",
         condition => $<expression>.made,
@@ -263,11 +263,40 @@ method repeat-statement($/) {
     if !$<expression> {
         die "REPEAT statement must have a condition";
     }
-    self.trace("Building REPEAT UNTIL " ~ $<expression>);
+    #self.trace("Building REPEAT UNTIL " ~ $<expression>);
     make {
         type => "repeat",
         body => $<statement-sequence>.made,
         condition => $<expression>.made
+    };
+}
+
+method for-statement($/) {
+    if !$<identifier> {
+        self.trace( "FOR statement must have a variable identifier" );
+    }
+    if !$<expression>[0] {
+        self.trace(  "FOR statement must have a start expression" );
+    }
+    if !$<expression>[1] {
+        self.trace(  "FOR statement must have an end expression" );
+    }
+    if !$<do-token> {
+        self.trace(  "FOR statement must have a DO token" );
+    }
+    if !$<statement-sequence> {
+        self.trace(  "FOR statement must have a statement sequence" );
+    }
+   
+    my $by-expr = $<expression>[2]:exists ?? $<expression>[2].made !! Nil;
+    
+    make {
+        type => "for",
+        variable => ~$<identifier>,
+        start => $<expression>[0].made,
+        end => $<expression>[1].made,
+        step => $by-expr,  # Nil if not provided
+        body => $<statement-sequence>.made
     };
 }
 
