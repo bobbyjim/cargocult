@@ -63,22 +63,21 @@ grammar Xenober16::Parser {
 	token working-storage-token { 'WORKING-STORAGE SECTION.' }
 	token procedure-division-token { 'PROCEDURE DIVISION.' }
 	token end-program-token { 'END PROGRAM.' }
-	token if-token { (IF|If|if) }
-	token then-token { (THEN|Then|then) }
-	token elsif-token { (ELSIF|Elsif|elsif) }
-	token else-token { (ELSE|Else|else) }
-	token end-token { (END|End|end) }
+	token if-token { 'IF' }
+	token then-token { 'THEN' }
+	token elsif-token { 'ELSIF' }
+	token else-token { 'ELSE' }
+	token end-token { 'END' }
 
 	token identifier { <[a..zA..Z_]><[a..zA..Z0..9_]>* }
-	token number { <[0..9]>+ 	}
-	token hex-literal { '$' <[0..9A..Fa..f]>+ }
+	token number { <digit-string> | <hex-string> }
+	token digit-string { <[0..9]>+ }
+	token hex-string   { '$' <[0..9A..Fa..f]>+ }	
 	token string-literal { '"' [ <-["]> | '\\' . ]* '"' }
-	token data-type { 'INT8' :i | 'UINT8' :i | 'INT16' :i | 'UINT16' :i | 'INT32' :i | 'UINT32' :i | 'STRING' :i }
+	token data-type { (INT8|UINT8|INT16|UINT16|INT32|UINT32|CHAR|STRING) }
 	token add-op { '+' | '-' }
 	token mul-op { '*' | '/' | '%' }
 	token compare-op { '==' | '<' | '>' | '<=' | '>=' | '!=' }
-
-    rule array-type { 'ARRAY' '[' <number> ']' 'OF' <data-type> ';' }
 
 	rule identification-division {
 		<identification-token>

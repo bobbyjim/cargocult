@@ -1,5 +1,9 @@
 unit class Xenober16::ASTBuilder;
 
+    method trace($msg) {        # to control the debug output
+        say $msg;
+    }
+
     method TOP($/) {
        make {
 	   	   type   	  	   => 'program',
@@ -28,6 +32,10 @@ unit class Xenober16::ASTBuilder;
     }
     
     method declaration($/) {
+        self.trace("Parsing declaration: [" ~ $<identifier> ~ "] of type [" ~ ~$<data-type> ~ "]");
+        if !$<data-type> {
+            die "Declaration must have a data type";
+        }
         make {
             identifier => ~$<identifier>,
             data_type  => ~$<data-type>
@@ -75,9 +83,9 @@ unit class Xenober16::ASTBuilder;
         elsif $<arith-expr> {
             make $<arith-expr>.made;
         } 
-        elsif $<number> {
-            make { type => "number", value => +$<number> };
-        } 
+#        elsif $<number> {
+            #make { type => "number", value => +$<number> };
+#        } 
         elsif $<identifier> {
             make { type => "identifier", name => ~$<identifier> };
         }
@@ -129,7 +137,15 @@ unit class Xenober16::ASTBuilder;
             die "Factor must be a number, identifier, or arithmetic expression";
         }
         if $<number> {
-            make { type => "number", value => +$<number> };
+            if $<number><digit-string> {
+                #self.trace("Parsing number as digit string: " ~ ~$<number><digit-string>);
+                make { type => "number", value => +$<number><digit-string>, base => 10 };
+            }
+            elsif $<number><hex-string> {
+                my $hexval = $<number><hex-string>.Str.substr(1).parse-base(16);
+                #self.trace("Parsing number as hex string: " ~ ~$<number><hex-string> ~ " (value: " ~ $hexval ~ ")");
+                make { type => "number", value => $hexval, base => 16 };
+            }
         } 
         elsif $<identifier> {
             make { type => "identifier", name => ~$<identifier> };

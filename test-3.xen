@@ -8,14 +8,14 @@ WORKING-STORAGE SECTION.
   anotherMessage: STRING;
 
 PROCEDURE DIVISION.
-   message := 65;
+   message := $65;
    anotherMessage := "hello, world!";
 
    message := message + 5;
-   SAY anotherMessage;
+   SAY message;
 
    IF message > 60
-   Then
+   THEN
        SAY "greater than 60";
    ELSIF message > 50
    THEN
