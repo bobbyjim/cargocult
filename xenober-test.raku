@@ -13,11 +13,11 @@ sub MAIN(Str $file) {
 	# Check if the parse was successful
 	if $result {
 		my $ast = $result.made;
- 	 	#say $ast;
+		say "\n[AST Build successful.  Running interpreter...]\n";
 	 	my $interpreter = Xenober16::Interpreter.new;
 	 	$interpreter.run($ast);
 	 	say "[Program executed successfully]";
 	} else {
-	 	say "[Parse failed]";
+	 	say "\n[AST Build failed (or perhaps just the parser)]\n";
 	}
 }

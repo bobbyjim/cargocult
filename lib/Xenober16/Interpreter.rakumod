@@ -80,6 +80,37 @@ method handle-statement($stmt) {
                 }
             }
         }
+        when 'while' {
+            self.trace( "Handling WHILE statement" );
+            while self.evaluate($stmt<condition>) {
+                for $stmt<body>.flat -> $body_stmt {
+                    self.handle-statement($body_stmt);
+                }
+            }
+        }
+        when 'repeat' {
+            self.trace( "Handling REPEAT statement" );
+            repeat {
+                for $stmt<body>.flat -> $body_stmt {
+                    self.handle-statement($body_stmt);
+                }
+            } while !self.evaluate($stmt<condition>);
+        }
+        when 'for' {
+            my $start = self.evaluate($stmt<start>);
+            my $end   = self.evaluate($stmt<end>);
+            my $by-expr  = $stmt<by-expression> ?? self.evaluate($stmt<by-expression>) !! 1;
+
+            for $start .. $end -> $value {
+                %!env{$stmt<variable>} = $value;
+                for $stmt<body>.flat -> $body_stmt {
+                    self.handle-statement($body_stmt);
+                }
+                #
+                # Don't forget to handle the BY expression
+                #
+            }
+        }
         default {
             die "Unknown statement type: {$stmt<type>}";
         }

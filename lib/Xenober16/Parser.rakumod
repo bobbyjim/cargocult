@@ -14,21 +14,25 @@
 #
 #  RECORD													# Record
 #	  myField1: char[10];
-#	  myField2: UINT16;
+#	  myBitField1: UINT16 :3;
+#	  myBitField2: UINT16 :5;
+#	  myField2: INT16;
 #  END
-#
-#  BITRECORD												# Record with :N bitfields
-#	  myfield1: UINT8 :3;									# 3 bits
-#	  myfield2: UINT8 :5;									# 5 bits
-#  END
-#						
+#  myRec: myRecord;											# record variable declaration	
+#  myRec: myRecord := { myField1: "Hello", myField2: 1234 };	# record variable assignment
+#  myRec.myField1 := "World";								# record field assignment
+#  myRec.myBitField1 := 5;									# record bit field assignment
+#  myRec.myField2 := 1234;									# record field assignment
+#  myRec.myField1 := myRec.myField2;						# record field assignment
+#  myRec.myField1 := myRec.myBitField1;						# record field assignment
+
 #  CONST myConst := 3;  									# constant declaration
 #					
 #  include "filename";										# file inclusion pre-processor
 #	
-#  myReg := R0();  											# register fetch
-#  R0(3);          											# register assignment
-#  R0L(3); 	       											# register assignment (low byte)
+#  myReg := \R0;  											# register fetch
+#  \R0   := 12000; 											# register assignment
+#  \R0L  := 3;    											# register assignment (low byte)
 #
 #  ASM "inline assembly";
 #  ASM
@@ -67,7 +71,14 @@ grammar Xenober16::Parser {
 	token then-token { 'THEN' }
 	token elsif-token { 'ELSIF' }
 	token else-token { 'ELSE' }
+	token while-token { 'WHILE' }
+	token do-token { 'DO' }
+	token repeat-token { 'REPEAT' }
+	token until-token { 'UNTIL' }
 	token end-token { 'END' }
+	token semicolon { ';' }
+	token dot { '.' }
+	token colon { ':' }
 
 	token identifier { <[a..zA..Z_]><[a..zA..Z0..9_]>* }
 	token number { <digit-string> | <hex-string> }
@@ -83,7 +94,7 @@ grammar Xenober16::Parser {
 		<identification-token>
 		<program-id-token> 
 		<identifier>
-		'.'
+		<dot>
 	}
 
 	rule data-division {
@@ -95,20 +106,24 @@ grammar Xenober16::Parser {
 		<declaration>+
 	}
 	rule declaration {
-		<identifier> ':' <data-type> ';'
+		<identifier> <colon> <data-type> <semicolon>
 	}
 	rule procedure-division {
 		<procedure-division-token>
 		<statement>+
 	}
 	rule statement {
-		<assignment> | <say> | <if-statement>
+		<assignment> 
+		| <say> 
+		| <if-statement> 
+		| <while-statement>
+		| <repeat-statement>
 	}
 	rule assignment {
-		<identifier> ':=' <expression> ';'
+		<identifier> ':=' <expression> <semicolon>
 	}
 	rule say {
-		'SAY' <expression> ';'
+		'SAY' <expression> <semicolon>
 	}
 	rule expression {
 		<compare-expr> | <string-literal> | <arith-expr>
@@ -130,6 +145,13 @@ grammar Xenober16::Parser {
 		<arith-expr> <compare-op> <arith-expr>
 	}
 
+#
+# 	Xenober-16 control flow statements
+#
+	rule statement-sequence {
+		<statement>+
+	}
+
 	rule if-statement {
 		<if-token> <expression> <then-token> <statement-sequence>
 		[ <elsif-clause> ]*
@@ -144,8 +166,13 @@ grammar Xenober16::Parser {
 	rule else-clause {
 		<else-token> <statement-sequence>
 	}
-	
-	rule statement-sequence {
-		<statement>+
+
+	rule while-statement {
+		<while-token> <expression> <do-token> <statement-sequence> <end-token>
 	}
+
+	rule repeat-statement {
+		<repeat-token> <statement-sequence> <until-token> <expression> <semicolon> <end-token>
+	}
+
 }
