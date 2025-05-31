@@ -16,7 +16,9 @@ method TOP($/) {
 method identification-division($/) {
     make {
         type => "identification",
-        name => ~$<identifier>
+        name => ~$<program-id><identifier>,
+        date => ~$<program-date><identifier>,
+        designer => ~$<designed-by><identifier>
     };
 }
 
@@ -299,5 +301,33 @@ method for-statement($/) {
         body => $<statement-sequence>.made
     };
 }
+
+method case-statement($/) {
+
+    say( "\n\n\n         **** TODO **** The labels aren't being parsed correctly yet.\n\n\n");
+
+    my $expr = $<expression>.ast;
+    my @cases = $<case-element>.map(*.ast);
+    my @else = $<else-token> ?? $<statement-sequence><statement>.map(*.ast) !! Nil;
+    
+    make {
+        type => "case",
+        expr => $expr,
+        cases => @cases,
+        else => @else
+    }
+}
+
+method case-element($/) {
+    my @labels = $<label-list>».made;
+    my @body = $<statement-sequence><statement>.map({ $_.ast });
+    
+    make {
+        type => "case-element",
+        labels => @labels,
+        body => @body
+    };
+}
+
 
 

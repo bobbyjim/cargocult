@@ -62,6 +62,9 @@ grammar Xenober16::Parser {
 	
 	token identification-token { 'IDENTIFICATION DIVISION.' }
 	token program-id-token { 'PROGRAM-ID.' }
+	token program-date-token { 'PROGRAM-DATE.' }
+	token designed-by-token { 'DESIGNED-BY.' }
+
 	token data-division-token { 'DATA DIVISION.' }
 	token working-storage-token { 'WORKING-STORAGE SECTION.' }
 	token procedure-division-token { 'PROCEDURE DIVISION.' }
@@ -77,11 +80,15 @@ grammar Xenober16::Parser {
 	token for-token { 'FOR' }
 	token to-token { 'TO' }
 	token by-token { 'BY' }
+	token case-token { 'CASE' }
+	token of-token { 'OF' }
 	token say-token { 'SAY' }
 	token end-token { 'END' }
 	token semicolon { ';' }
 	token dot { '.' }
 	token colon { ':' }
+	token pipe { '|' }
+	token comma { ',' }
 
 	token identifier { <[a..zA..Z_]><[a..zA..Z0..9_]>* }
 	#
@@ -98,10 +105,12 @@ grammar Xenober16::Parser {
 
 	rule identification-division {
 		<identification-token>
-		<program-id-token> 
-		<identifier>
-		<dot>
+		<program-id>
 	}
+
+	rule program-id   { <program-id-token> <identifier> <dot> }
+	rule program-date { <program-date-token> <identifier> <dot> }
+	rule designed-by  { <designed-by-token> <identifier> <dot> }
 
 	rule data-division {
 		<data-division-token>
@@ -125,6 +134,7 @@ grammar Xenober16::Parser {
 		| <while-statement>
 		| <repeat-statement>
 		| <for-statement>
+		| <case-statement>
 	}
 	rule assignment {
 		<identifier> ':=' <expression> <semicolon>
@@ -186,5 +196,20 @@ grammar Xenober16::Parser {
 		<for-token> <identifier> ':=' <expression> <to-token> <expression>
 		[ <by-token> <expression> ]? 
 		<do-token> <statement-sequence> <end-token>
+	}
+
+	rule case-statement {
+		<case-token> <expression> <of-token> 
+		<case-element>+ 
+		[ <else-token> <statement-sequence> ]?
+		<end-token>
+	}
+
+	rule case-element {
+		<case-label>+ % ',' <colon> <statement-sequence> <pipe>
+	}
+
+	rule case-label {
+		<expression>
 	}
 }

@@ -7,17 +7,22 @@ sub MAIN(Str $file) {
 	my $parser = Xenober16::Parser;
 	my $text = slurp $file;
 	
-	my $result = $parser.parse($text, :actions(Xenober16::ASTBuilder.new), :trace);
-	#say $result;
+	#say $parser.parse($text);
 
-	# Check if the parse was successful
-	if $result {
-		my $ast = $result.made;
-		say "\n[AST Build successful.  Running interpreter...]\n";
-	 	my $interpreter = Xenober16::Interpreter.new;
-	 	$interpreter.run($ast);
-	 	say "[Program executed successfully]";
-	} else {
-	 	say "\n[AST Build failed (or perhaps just the parser)]\n";
+	my $result = $parser.parse($text, :actions(Xenober16::ASTBuilder.new), :trace);
+
+	if !$result {
+		say "\n[Parser failed to parse the file: $file]";
+		#say "Error: " ~ $parser.parse-error;
+		exit 1;
 	}
+
+	my $ast = $result.made;
+	say $ast;
+
+	say "\n[AST Build successful.  Running interpreter...]\n";
+ 	my $interpreter = Xenober16::Interpreter.new;
+ 	$interpreter.run($ast);
+ 	say "[Program executed successfully]";
+	exit 0;
 }

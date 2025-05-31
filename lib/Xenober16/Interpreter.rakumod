@@ -124,6 +124,25 @@ method handle-statement($stmt) {
                 die "Step value cannot be zero";
             }
         }
+        when 'case' {
+            my $value = self.evaluate($stmt<expr>);
+            my $matched = False;
+
+            for $stmt<cases> -> $case {
+                my @labels = $case<labels>.map({ self.evaluate($_) });
+                if $value eq any(@labels) {
+                    self.handle-statement($_) for $case<body>;
+                    $matched = True;
+                    last;
+                }
+            }
+
+            if !$matched && $stmt<else> {
+                for $stmt<else><statements>.flat -> $else-stmt {
+                    self.handle-statement($_) for $stmt<else>;
+                }
+            }
+        }
         default {
             die "Unknown statement type: {$stmt<type>}";
         }
