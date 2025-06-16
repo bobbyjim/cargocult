@@ -1,4 +1,6 @@
-unit class Xenober16::ASTBuilder;
+unit class Xenober15::ASTBuilder;
+
+use Xenober15::Builder::NodeFactory;
 
 method trace($msg) {        # to control the debug output
     say $msg;
@@ -17,8 +19,8 @@ method identification-division($/) {
     make {
         type => "identification",
         name => ~$<program-id><identifier>,
-        date => ~$<program-date><identifier>,
-        designer => ~$<designed-by><identifier>
+        #date => ~$<program-date><identifier>,
+        #designer => ~$<designed-by><identifier>
     };
 }
 
@@ -67,10 +69,7 @@ method say($/) {
     if !$<expression> {
         die "SAY statement must have an expression";
     }
-    make {
-        type  => "say",
-        value => $<expression>.made
-    };
+    make Xenober15::Builder::NodeFactory.make-say($/);
 }
 
 method expression($/) {

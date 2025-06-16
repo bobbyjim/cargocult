@@ -5,11 +5,9 @@ DATA DIVISION.
 
 WORKING-STORAGE SECTION.
   message: UINT8;
-  anotherMessage: STRING;
 
 PROCEDURE DIVISION.
    message := $65;
-   anotherMessage := "hello, world!";
 
    SAY "Counting down to 20";
    WHILE message > 20 DO

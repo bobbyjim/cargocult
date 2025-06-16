@@ -1,4 +1,4 @@
-unit class Xenober16::Interpreter;
+unit class Xenober15::Interpreter;
 
 has %!env;  # Symbol table for variables
 

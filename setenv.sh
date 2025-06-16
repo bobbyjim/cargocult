@@ -1,0 +1,1 @@
+export RAKULIB=/Volumes/Zort/git/cargocult/lib

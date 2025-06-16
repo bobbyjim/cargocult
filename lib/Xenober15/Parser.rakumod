@@ -50,7 +50,7 @@
 #
 
 
-grammar Xenober16::Parser {
+grammar Xenober15::Parser {
 	rule TOP {
 		<identification-division>
 		<data-division>?
@@ -98,7 +98,7 @@ grammar Xenober16::Parser {
 	token digit-string { <[0..9]>+ }
 	token hex-string   { '$' <[0..9A..Fa..f]>+ }	
 	token string-literal { '"' [ <-["]> | '\\' . ]* '"' }
-	token data-type { (INT8|UINT8|INT16|UINT16|INT32|UINT32|CHAR|STRING) }
+	token data-type { (INT8|UINT8|INT16|UINT16|INT32|UINT32|CHAR) }
 	token add-op { '+' | '-' }
 	token mul-op { '*' | '/' | '%' }
 	token compare-op { '==' | '<' | '>' | '<=' | '>=' | '!=' }
@@ -106,6 +106,8 @@ grammar Xenober16::Parser {
 	rule identification-division {
 		<identification-token>
 		<program-id>
+		<designed-by>?
+		<program-date>?
 	}
 
 	rule program-id   { <program-id-token> <identifier> <dot> }

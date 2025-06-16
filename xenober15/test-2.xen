@@ -1,16 +1,15 @@
-IDENTIFICATION DIVISION. 
+IDENTIFICATION DIVISION.
 PROGRAM-ID. HelloWorld.
 
 DATA DIVISION.
 
 WORKING-STORAGE SECTION.
   message: UINT8;
-  anotherMessage: STRING;
+  anotherMessage: CHAR;
 
 PROCEDURE DIVISION.
    message := 65;
    SAY message;
-
-  SAY "hello world.";
+   SAY message * 2 + 1 * 10;
 
 END PROGRAM.
