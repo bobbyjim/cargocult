@@ -1,10 +1,10 @@
 unit class Xenober16::Builder::NodeFactory;
 
-class ASTNode { 
+role ASTNode { 
 	method node-type { self.WHAT.perl }
 }
 
-class IdentifierNode is ASTNode {
+class IdentifierNode does ASTNode {
 	has Str $.name;
 	method Str() { "IdentifierNode(name => '$.name')" }
 	method dump($indent="") {
@@ -12,7 +12,7 @@ class IdentifierNode is ASTNode {
 	}
 }
 
-class ModuleNode is ASTNode {
+class ModuleNode does ASTNode {
 	has IdentifierNode $.id;
 	method Str() { "ModuleNode(id => '$.id')" }
 
@@ -23,10 +23,11 @@ class ModuleNode is ASTNode {
 	}
 }
 
-method new-module($id) {
-	ModuleNode.new(:$id);
-}
-
-method new-identifier($name) {
-	IdentifierNode.new(:$name);
+method build(Str $type, *%args) {
+	# Factory method to create nodes based on type
+	given $type {
+		when 'ModuleNode' 		{ return ModuleNode.new(|%args); 		}
+		when 'IdentifierNode' 	{ return IdentifierNode.new(|%args);  	}
+		default 				{ die "Unknown node type: $type"; 		}
+	}
 }

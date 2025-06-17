@@ -2,7 +2,7 @@ unit class Xenober16::ASTBuilder;
 
 use Xenober16::Builder::NodeFactory;
 
-has Xenober16::Builder::NodeFactory $.node-factory.new; # inject the NodeFactory
+has $.node-factory = Xenober16::Builder::NodeFactory.new; # inject the NodeFactory
 
 method trace($msg) {        # to control the debug output
 	say $msg;
@@ -27,7 +27,8 @@ method module-id($/) {
 	# Create a ModuleNode using the NodeFactory
 	my $id = $<identifier>.made;
 	self.trace("Identifier result: $id");
-	my $node = $.node-factory.new-module($id);
+	#my $node = $.node-factory.new-module($id);
+	my $node = $.node-factory.build('ModuleNode', :id($id));
 	self.trace("Created ModuleNode: $node");
 	make $node;
 }
@@ -36,7 +37,8 @@ method identifier($/) {
 	self.trace("Building identifier: $/");
 	# Create an IdentifierNode using the NodeFactory
 	my $name = ~$/;
-	my $node = $.node-factory.new-identifier($name);
+	#my $node = $.node-factory.new-identifier($name);
+	my $node = $.node-factory.build('IdentifierNode', :name($name));
 	self.trace("Created IdentifierNode: $node");
 	make $node;
 }

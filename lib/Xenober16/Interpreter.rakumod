@@ -8,6 +8,10 @@ method run($ast) {
 	self.interpret($ast);
 }
 
+multi method interpret(Xenober16::Builder::NodeFactory::ASTNode $node) {
+	die "Unhandled AST node: {$node.^name}";
+}
+
 multi method interpret(Xenober16::Builder::NodeFactory::ModuleNode $node) {
 	say "Interpreting ModuleNode: " ~ $node.id.name;
 	# Here you would add logic to handle the module, such as loading it or executing its contents.
