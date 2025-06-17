@@ -1,0 +1,15 @@
+MODULE IDENTIFICATION DIVISION.
+ID. Test3.
+
+DATA DEFINITION DIVISION.
+WORKING-STORAGE SECTION.
+   myvar : UINT8 := -10;
+
+CODE DIVISION.
+   
+   WHILE myvar < 0 DO 
+      myvar := myvar + 1;
+      SAY myvar;
+   END
+
+END MODULE.
