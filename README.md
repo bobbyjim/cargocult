@@ -1,9 +1,9 @@
-# xenober-16
-An easy-to-parse procedural programming language.
+# xenober16
+An easy-to-parse procedural programming language with some retro flavor, designed for programming on the Commander X16.
 
-Its parser is written in Raku.
+Written in Raku.
 
-# 1. Project Goals
+# Project Goals
 - **Tailored for X16 Programming**: Create a domain-specific language (DSL) tailored for the Commander X16 platform.
 - **Learn from Oberon**: Unambiguous syntax means easy to parse.
 - **Learn from COBOL**: Program divisions flattens the grammar.
@@ -16,37 +16,5 @@ banked memory referencing (nearly) for free.
 # No Need For These Ever
 * No Memory allocation.
 * No Real number support.
+* No sets or hashes.
 
-# CURRENT
-
-* IDENTIFICATION DIVISION.
-* PROGRAM-ID. <name>.
-
-* DATA DIVISION.
-* WORKING-STORAGE SECTION.
-* INT8, INT16, INT32, UINT8, UINT16, UINT32, STRING declarations.
-
-* PROCEDURE DIVISION.
-* assignment with := 
-* SAY
-* Arithmetic binops with precedence (* / %) and (+ -)
-* Compare binops < > <= >= == !=
-* IF THEN ELSIF ELSE END
-
-* END PROGRAM.
-
-# TO BE DONE
-
-* Compound conditions (&& ||) 
-* Nested IFs
-* WHILE
-* REPEAT / UNTIL
-* FOR
-* CASE
-* BANK-STORAGE SECTION for holding references to banked data
-* Arrays
-* PROC or function calls
-* Named parameter lists for procs.
-* Records (structures)
-* Bitfields inside Records or a special type of Record.
-* Fixed-point type: fixed8_8_t.
