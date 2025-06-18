@@ -3,13 +3,20 @@ A language custom-built for the Commander X16, intentionally blending "retro" ae
 Inspired by Oberon's readability and structure combined with COBOL's division-based organization.
 Focus on direct hardware access, explicit memory management, and efficient code generation optimized for the X16's 6502 processor.
 
-I'm building a structured intermediate representation with a clean front-end, and using the interpreter for testing and prototyping behavior. Then, for real deployment, the code generators will produce trusted outputs (C, Prog8) to do the heavy lifting for optimization and linking.
+I'm building a structured intermediate representation with a clean front-end, and using the interpreter for testing and prototyping behavior. Then, for real deployment, the code generators will produce trusted outputs (C, Prog8) to do the heavy lifting for optimization and linking. In short, this set of tools is to support transpiling to C or Prog8. 
+
+* I don't need to implement low-level optimization, register allocation, or linking.
+* The AST is, for all practical purposes, the Intermediate Representation.
+* I only need the AST Intermediate Representation > Code to be structurally and semantically valid.
+* The hard problems like emitting efficient jump tables, aligning structs in memory, and resolving cross-module calls get offloaded.
 
 # II. Language Structure
 
 The language follows a rigid division-based structure:
 
 ## MODULE IDENTIFICATION DIVISION: (Mandatory)
+This section is parsed first and acts as a "header" and metadata holder for the module.
+
     MODULE-ID. (Mandatory): Designates the module name.
     MAIN. (Optional): Marks the program's entry point.
     AUTHOR. (Optional)
@@ -20,13 +27,25 @@ The language follows a rigid division-based structure:
 ## IMPORT DIVISION: (Optional)
 USE statements (one per line): Declares module dependencies.
 
+		USE MyModule.
+		USE stdio.
+		USE string.
+
 ## DATA DIVISION: (Optional)
 WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
+ 
+    myVar : INT16 := 17_000;
 
 * Oberon-style syntax for declarations (e.g., variableName : DataType := initialValue;).
 * Type definitions (records, arrays) are also located in this section.
 
 ## CODE DIVISION: (Optional)
+
+    WHILE myVar > 0 DO
+	   SAY myVar;
+	   myVar := myVar - 10;
+	END
+
 * Contains executable code.
 * Oberon-style syntax for procedures and the main program body.
 * BEGIN and END keywords mark the start and end of procedures.
@@ -48,6 +67,8 @@ Annotations: Used to specify memory locations for variables.
 * @BANK(bankNumber, address): Places the variable in banked RAM.
 * @RAM(address): Places the variable in directly addressable RAM ("golden RAM").
 * @ZEROPAGE(offset): Places the variable in zero page at the given offset.
+
+    myVar : ARRAY[20] OF INT16 @BANK(1, $A000);
 
 Automatic Bank Switching: The compiler automatically inserts SetBank() calls when accessing banked memory locations.
 
@@ -74,21 +95,26 @@ No Direct RAM Assignment: Direct assignment to RAM using a $ prefix is not suppo
 # VIII. Bitfields:
 
 * Defined using the @BITFIELD(width) annotation within records.
+* Can define fields from 1 to 15 bits long.
 * Example: value : @BITFIELD(12);
 * Bitfields are implicitly unsigned integral types.
 
 The compiler infers the underlying type based on the width:
+
     @BITFIELD(1) - @BITFIELD(8): Implies UINT8
-    @BITFIELD(9) - @BITFIELD(16): Implies UINT16
-    @BITFIELD(17) - @BITFIELD(24): Implies UINT24
+    @BITFIELD(9) - @BITFIELD(15): Implies UINT16
 
 Compiler generates code to handle masking and shifting.
 
 # IX. Control Flow:
 
-* IF-THEN-ELSE, WHILE, FOR loops.
-* CASE statements (optional).
-* No GOTO. LOOP and EXIT (optional).
+* IF-THEN-ELSE, WHILE, FOR, LOOP.
+    * FOR loops have predictable bounds.
+* Trailing IF conditions some statements.
+	* LAST [IF <expr>];
+	* SAY <expr> [IF <expr>];
+* CASE statements (C-style comparisons, and chained-if semantics in the interpreter).
+* No GOTO.
 
 # X. Modules and Imports:
 

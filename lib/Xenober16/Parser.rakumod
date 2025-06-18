@@ -10,7 +10,7 @@ rule identification-division {
 }
 
 rule module-id {
-	'ID.' <identifier> '.' 
+	'MODULE-ID.' <identifier> '.' 
 }
 
 rule end-module {
