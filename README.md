@@ -12,13 +12,14 @@ I'm building a structured intermediate representation with a clean front-end, an
 
 # II. Language Structure
 
-The language follows a rigid division-based structure:
+The language follows a rigid division-based structure.
+
+* Note: The file passed to the xen16 command is the MAIN module.
 
 ## MODULE IDENTIFICATION DIVISION: (Mandatory)
 This section is parsed first and acts as a "header" and metadata holder for the module.
 
     MODULE-ID. (Mandatory): Designates the module name.
-    MAIN. (Optional): Marks the program's entry point.
     AUTHOR. (Optional)
     DATE-WRITTEN. (Optional)
     DESCRIPTION. (Optional)
@@ -120,7 +121,7 @@ Compiler generates code to handle masking and shifting.
 
 * Modules are defined using the division structure (MODULE-ID serves as the module name).
 * Modules are imported using the USE keyword in the IMPORT DIVISION.
-* Exported members are denoted with a * at the end of the name
+* Exported members are denoted with a trailing asterisk (*) after the name in declarations, for example, Main* : PROC();
 * To call a method in another module, specify the namespace e.g. OtherModule.AMethod()
 * The compiler enforces namespace qualifications.
 
@@ -132,7 +133,12 @@ Compiler generates code to handle masking and shifting.
 
 # XII. Inline Assembly:
 
-Allows embedding 6502 assembly code directly within the language.
+Allows embedding 6502 assembly code directly within the language. For example, something like this:
+
+    ASM
+        LDA #65
+        JSR $FFD2
+    END
 
 # XIII. Exclusions:
 

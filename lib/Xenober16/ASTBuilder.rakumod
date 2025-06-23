@@ -28,7 +28,8 @@ method module-id($/) {
 	my $id = $<identifier>.made;
 	self.trace("Identifier result: $id");
 	#my $node = $.node-factory.new-module($id);
-	my $node = $.node-factory.build('ModuleNode', :id($id));
+	my $line = $/.orig.substr(0, $/.from).lines.elems;
+	my $node = $.node-factory.build('ModuleNode', :id($id), :src($line));
 	self.trace("Created ModuleNode: $node");
 	make $node;
 }
@@ -38,7 +39,8 @@ method identifier($/) {
 	# Create an IdentifierNode using the NodeFactory
 	my $name = ~$/;
 	#my $node = $.node-factory.new-identifier($name);
-	my $node = $.node-factory.build('IdentifierNode', :name($name));
+	my $line = $/.orig.substr(0, $/.from).lines.elems;
+	my $node = $.node-factory.build('IdentifierNode', :name($name), :src($line));
 	self.trace("Created IdentifierNode: $node");
 	make $node;
 }
