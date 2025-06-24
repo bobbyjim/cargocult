@@ -54,6 +54,7 @@ method module-id($/) {
 	make $<identifier>.made;
 }
 
+
 method identifier($/) {
 	self.trace("Building identifier: $/");
 	my $name = ~$/;

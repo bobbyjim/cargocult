@@ -15,15 +15,12 @@ rule identification-division {
 	<description-line>?
 }
 
-rule module-id {
-	'MODULE-ID.' <identifier> '.' 
-}
+rule module-id 			{ 'MODULE-ID:' <identifier> }
+rule author-line 		{ 'AUTHOR:' <text-line> }
+rule date-line 			{ 'DATE:' <text-line> }
+rule description-line 	{ 'DESCRIPTION:' <text-line> }
 
-rule author-line { 'AUTHOR.' <text-line> }
-rule date-line { 'DATE.' <text-line> }
-rule description-line { 'DESCRIPTION.' <text-line> }
-
-rule text-line { <[^.\n]>+ '.' }
+rule text-line { <-[\n]>+ }
 
 rule end-module {
 	'END MODULE.' 
