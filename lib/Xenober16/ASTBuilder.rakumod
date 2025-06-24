@@ -35,6 +35,7 @@ method identification-division($/) {
 	my $author = $<author-line> ?? ~$<author-line><text-line> !! Nil;
 	my $date = $<date-line> ?? ~$<date-line><text-line> !! Nil;
 	my $description = $<description-line> ?? ~$<description-line><text-line> !! Nil;
+	my $license = $<license-line> ?? ~$<license-line><text-line> !! Nil;
 
 	my $line = $/.orig.substr(0, $/.from).lines.elems;
 	my $node = $.node-factory.build(
@@ -43,6 +44,7 @@ method identification-division($/) {
 		:author($author),
 		:date($date),
 		:description($description),
+		:license($license),
 		:src($/.orig.substr(0, $/.from).lines.elems)
 	);
 	self.trace("Created IdentificationDivisionNode: $node");

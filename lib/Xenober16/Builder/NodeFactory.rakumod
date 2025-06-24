@@ -20,6 +20,7 @@ class IdentificationDivisionNode does ASTNode {
 	has $.author = Nil;
 	has $.date = Nil;
 	has $.description = Nil;
+	has $.license = Nil; 
 
 	method Str() {
 		my $id = $!module-id ?? $!module-id.Str !! "(no module-id)";
@@ -33,6 +34,7 @@ class IdentificationDivisionNode does ASTNode {
         say $indent ~ "  author: " ~ ($!author // '(none)');
         say $indent ~ "  date: " ~ ($!date // '(none)');
         say $indent ~ "  description: " ~ ($!description // '(none)');
+		say $indent ~ "  license: " ~ ($!license // '(none)');
         say $indent ~ self.line-info;
 	}
 }

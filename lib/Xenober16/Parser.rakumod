@@ -13,14 +13,16 @@ rule identification-division {
 	<author-line>?
 	<date-line>?
 	<description-line>?
+	<license-line>?
 }
 
 rule module-id 			{ 'MODULE-ID:' <identifier> }
 rule author-line 		{ 'AUTHOR:' <text-line> }
 rule date-line 			{ 'DATE:' <text-line> }
 rule description-line 	{ 'DESCRIPTION:' <text-line> }
+rule license-line 		{ 'LICENSE:' <text-line> }
 
-rule text-line { <-[\n]>+ }
+token text-line { <-[\n]>+ }
 
 rule end-module {
 	'END MODULE.' 

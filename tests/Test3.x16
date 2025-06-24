@@ -3,6 +3,7 @@ MODULE-ID: Test3
 AUTHOR: birdrock
 DATE: 2025-06-24
 DESCRIPTION: Demonstration of "SAY" with a variable
+LICENSE: MIT
 
 DATA DIVISION.
 WORKING-STORAGE SECTION.

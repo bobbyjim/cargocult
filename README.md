@@ -1,14 +1,19 @@
 # I. Xenober16
-A language custom-built for the Commander X16, intentionally blending "retro" aesthetics with modern programming principles.
-Inspired by Oberon's readability and structure combined with COBOL's division-based organization.
-Focus on direct hardware access, explicit memory management, and efficient code generation optimized for the X16's 6502 processor.
+"A mundane transpiler for annoying times"
 
-I'm building a structured intermediate representation with a clean front-end, and using the interpreter for testing and prototyping behavior. Then, for real deployment, the code generators will produce trusted outputs (C, Prog8) to do the heavy lifting for optimization and linking. In short, this set of tools is to support transpiling to C or Prog8. 
+In short, this is for transpiling to something like cc65 or Prog8.
 
-* I don't need to implement low-level optimization, register allocation, or linking.
-* The AST is, for all practical purposes, the Intermediate Representation.
-* I only need the AST Intermediate Representation > Code to be structurally and semantically valid.
-* The hard problems like emitting efficient jump tables, aligning structs in memory, and resolving cross-module calls get offloaded.
+Retro aesthetics, inspired by Oberon's readability and structure combined with COBOL's division-based organization. 
+
+The AST is, for all practical purposes, the Intermediate Representation. I only need the AST Intermediate Representation > Code to be structurally and semantically valid.
+
+Transpiling gives me shortcuts.  I don't need to implement:
+* low-level optimization
+* register allocation
+* linking
+* emitting efficient jump tables
+* aligning structs in memory (mostly)
+* resolving cross-module calls
 
 # II. Language Structure
 
@@ -19,11 +24,11 @@ The language follows a rigid division-based structure.
 ## MODULE IDENTIFICATION DIVISION: (Mandatory)
 This section is parsed first and acts as a "header" and metadata holder for the module.
 
-    MODULE-ID. (Mandatory): Designates the module name.
-    AUTHOR. (Optional)
-    DATE-WRITTEN. (Optional)
-    DESCRIPTION. (Optional)
-    LICENSE. (Optional)
+    MODULE-ID: (Mandatory): Designates the module name.
+    AUTHOR: (Optional)
+    DATE: (Optional)
+    DESCRIPTION: (Optional)
+    LICENSE: (Optional)
 
 ## IMPORT DIVISION: (Optional)
 USE statements (one per line): Declares module dependencies.
@@ -35,7 +40,7 @@ USE statements (one per line): Declares module dependencies.
 ## DATA DIVISION: (Optional)
 WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
  
-    myVar : INT16 := 17_000;
+    myVar : INT16 := 12_000;
 
 * Oberon-style syntax for declarations (e.g., variableName : DataType := initialValue;).
 * Type definitions (records, arrays) are also located in this section.
@@ -54,13 +59,12 @@ WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
 * No BEGIN keyword is used to demarcate the start of the main program body.
 
 # III. Data Types
-* Signed Integers: INT8, INT16, INT24.
-* Unsigned Integers: UINT8, UINT16, UINT24.
-* Character: CHAR (8-bit).
-* Fixed-Point: A FIXED type is under consideration, potentially with bit-length specifiers.
+* INT8, INT16, INT24, UINT8, UINT16, UINT24.
+* CHAR.
+* Fixed-Point: maybe.
 * Arrays: Statically sized arrays.
 * Records (Structures): Used for grouping data.
-* Pointers: Supported for memory manipulation. Restricted pointers may be used.
+* Pointers: Supported for memory manipulation.
 
 # IV. Memory Management
 Annotations: Used to specify memory locations for variables.
@@ -70,6 +74,7 @@ Annotations: Used to specify memory locations for variables.
 * @ZEROPAGE(offset): Places the variable in zero page at the given offset.
 
     myVar : ARRAY[20] OF INT16 @BANK(1, $A000);
+    myRec : MyCoolRecord @BANK(2, $A000);
 
 Automatic Bank Switching: The compiler automatically inserts SetBank() calls when accessing banked memory locations.
 
@@ -102,8 +107,8 @@ No Direct RAM Assignment: Direct assignment to RAM using a $ prefix is not suppo
 
 The compiler infers the underlying type based on the width:
 
-    @BITFIELD(1) - @BITFIELD(8): Implies UINT8
-    @BITFIELD(9) - @BITFIELD(15): Implies UINT16
+    @BITFIELD(1) - @BITFIELD(8): Uses one byte
+    @BITFIELD(9) - @BITFIELD(15): Uses two bytes
 
 Compiler generates code to handle masking and shifting.
 
