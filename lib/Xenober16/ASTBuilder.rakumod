@@ -32,6 +32,8 @@ method TOP($/) {
 method identification-division($/) {
 	self.trace("Building identification-division: $/");
 	my $module-id = $<module-id>.made;
+	my $parameters = $<parameters-line> ?? $<parameters-line><param-decl> !! [];
+
 	my $author = $<author-line> ?? ~$<author-line><text-line> !! Nil;
 	my $date = $<date-line> ?? ~$<date-line><text-line> !! Nil;
 	my $description = $<description-line> ?? ~$<description-line><text-line> !! Nil;
@@ -39,15 +41,16 @@ method identification-division($/) {
 
 	my $line = $/.orig.substr(0, $/.from).lines.elems;
 	my $node = $.node-factory.build(
-		'IdentificationDivisionNode',
+		'ID_DivisionNode',
 		:module-id($module-id),
+		:parameters($parameters),
 		:author($author),
 		:date($date),
 		:description($description),
 		:license($license),
 		:src($/.orig.substr(0, $/.from).lines.elems)
 	);
-	self.trace("Created IdentificationDivisionNode: $node");
+	self.trace("Created ID_DivisionNode: $node");
 	make $node;
 }
 
@@ -56,6 +59,29 @@ method module-id($/) {
 	make $<identifier>.made;
 }
 
+method parameters-line($/) {
+	self.trace("Building parameters-line: $/");
+	my @params = $<param-decl>.map(*.made);
+	self.trace("Parameters in parameter list: {@params.perl}");
+	make @params;
+}
+
+method param-decl($/) {
+	self.trace("Building param-decl: $/");
+	my $name = $<identifier>.made;
+	my $type = ~$<type-name>;
+	my $default = $<expression> ?? $<expression>.made !! Nil;  # Handle optional expression
+
+	my $line = $/.orig.substr(0, $/.from).lines.elems;
+	my $node = $.node-factory.build(
+		'ParamDeclNode', 
+		:name($name), 
+		:type($type), 
+		:default($default), 
+		:src($line));
+	self.trace("Created ParamDeclNode: $node");
+	make $node;
+}
 
 method identifier($/) {
 	self.trace("Building identifier: $/");
@@ -100,8 +126,13 @@ method var-decl($/) {
 
 method expression($/) {
 	self.trace("Building expression: $/");
+	my $line = $/.orig.substr(0, $/.from).lines.elems;
+	
 	if $<int-literal> {
-		make +$<int-literal>;
+		my $value = +$<int-literal>;
+		my $node = $.node-factory.build('IntLiteralNode', :value($value), :src($line));
+		self.trace("Created IntLiteralNode: $node");
+		make $node;
 	} 
 	elsif $<identifier> {
 		make $<identifier>.made;

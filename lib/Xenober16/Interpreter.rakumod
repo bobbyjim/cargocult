@@ -46,6 +46,11 @@ multi method interpret(Xenober16::Builder::NodeFactory::IdentifierNode $node) {
     }
 }
 
+multi method interpret(Xenober16::Builder::NodeFactory::IntLiteralNode $node) {
+    say "Interpreting IntLiteralNode: " ~ $node.value;
+    return $node.value;
+}
+
 multi method interpret(Xenober16::Builder::NodeFactory::VarDeclNode $node) {
     say "Interpreting variable " ~ $node.name.name ~ " of type " ~ $node.type;
 
@@ -71,5 +76,5 @@ multi method interpret(Xenober16::Builder::NodeFactory::SayNode $node) {
 }
 
 multi method interpret(Xenober16::Builder::NodeFactory::ASTNode $node) {
-    die "Unhandled AST node: {$node.^name}";
+    die "Unhandled AST node: " ~ $node.WHAT ~ " at line " ~ ($node.^can('source-line') ?? $node.source-line !! '?');
 }

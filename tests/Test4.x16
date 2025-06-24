@@ -1,16 +1,13 @@
 MODULE IDENTIFICATION DIVISION.
 MODULE-ID: Test4
+PARAMETERS: Size: INT16 := 4;
 
 DATA DIVISION.
 WORKING-STORAGE SECTION.
-   myvar : UINT8 := 10;
-   i : UINT8;
+   myvar : INT16 := 10;
 
 CODE DIVISION.
-   
-   FOR i := 1 TO 5 DO
-      myvar := myvar + i;
-      SAY myvar;
-   END
+
+   SAY 123;
 
 END MODULE.

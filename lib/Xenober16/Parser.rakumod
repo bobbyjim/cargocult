@@ -10,6 +10,7 @@ rule TOP {
 rule identification-division { 
 	'MODULE IDENTIFICATION DIVISION.' 
 	<module-id>
+	<parameters-line>?
 	<author-line>?
 	<date-line>?
 	<description-line>?
@@ -17,12 +18,16 @@ rule identification-division {
 }
 
 rule module-id 			{ 'MODULE-ID:' <identifier> }
+rule parameters-line	{ 'PARAMETERS:' <param-decl>+ % ',' ';' }
 rule author-line 		{ 'AUTHOR:' <text-line> }
 rule date-line 			{ 'DATE:' <text-line> }
 rule description-line 	{ 'DESCRIPTION:' <text-line> }
 rule license-line 		{ 'LICENSE:' <text-line> }
 
 token text-line { <-[\n]>+ }
+
+rule param-decl { <identifier> ':' <type-name> [ ':=' <expression> ]? }
+
 
 rule end-module {
 	'END MODULE.' 

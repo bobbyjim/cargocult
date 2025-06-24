@@ -23,13 +23,10 @@ sub MAIN(Str $file, Bool :$debug = False) {
 	}
 
 	my $ast = $result.made;
-	say "AST: " ~ $ast.WHAT.perl if $debug;
 	unless $ast {
 		say "\n[❌ AST Build failed]";
 		exit 1;
 	}
-
-    say $ast if $debug;
     $ast.dump if $debug;
 
 	say "\n\e[32m[✅ AST Build successful.]\e[0m\n";

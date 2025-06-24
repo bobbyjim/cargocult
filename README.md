@@ -25,6 +25,7 @@ The language follows a rigid division-based structure.
 This section is parsed first and acts as a "header" and metadata holder for the module.
 
     MODULE-ID: (Mandatory): Designates the module name.
+    PARAMETERS: (Optional): Template values for instances of this module.
     AUTHOR: (Optional)
     DATE: (Optional)
     DESCRIPTION: (Optional)
