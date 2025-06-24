@@ -10,10 +10,6 @@ use Xenober16::Interpreter;
 
 sub MAIN(Str $file, Bool :$debug = False) {
 
-    say "\n****************************************************************************\n";
-	say "\n   * * * * * *     Did you \"source setenv.sh\" first, Rob?     * * * * * *   \n";	
-    say "\n****************************************************************************\n";
-
 	my $parser = Xenober16::Parser;
 	my $astBuilder = Xenober16::ASTBuilder.new;
 
@@ -23,7 +19,6 @@ sub MAIN(Str $file, Bool :$debug = False) {
 
 	unless $result {
 		say "\n[❌ Parser failed to parse the file: $file]";
-		say "[Line near failure: " ~ $text.lines[$parser.parse-error.line-1] ~ "]";
 		exit 1;
 	}
 
@@ -37,9 +32,8 @@ sub MAIN(Str $file, Bool :$debug = False) {
     say $ast if $debug;
     $ast.dump if $debug;
 
-	say "\n\e[32m[✅ AST Build successful.  Running interpreter...]\e[0m\n";
+	say "\n\e[32m[✅ AST Build successful.]\e[0m\n";
 	my $interpreter = Xenober16::Interpreter.new;
  	$interpreter.run($ast);
- 	say "[✅ Program executed successfully]";
 	exit 0;
 }
