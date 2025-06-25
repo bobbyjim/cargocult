@@ -1,22 +1,16 @@
 unit class Xenober16::Builder::NodeFactory;
 
-role ASTNode { 
-	has Int $.source-line = -1;
+use Xenober16::AST::ASTNode;
+use Xenober16::AST::IdentifierNode;
+use Xenober16::Builder::DeclarationNodeFactory;
 
-	method node-type { self.WHAT.perl }
-	method line-info { " (line: $.source-line)" }
-}
-
-class IdentifierNode does ASTNode {
-	has Str $.name;
-	method Str() { "IdentifierNode(name => '$.name')" }
-	method dump($indent="") {
-		say $indent ~ "IdentifierNode: '$.name'" ~ self.line-info;
-	}
-}
+#has $.expr-factory = ExpressionNodeFactory.new;
+has $.decl-factory = Xenober16::Builder::DeclarationNodeFactory.new;
+#has $.stmt-factory = StatementNodeFactory.new;
+#has $.module-factory = ModuleNodeFactory.new;
 
 class ID_DivisionNode does ASTNode {
-	has IdentifierNode $.module-id;
+	has Xenober16::AST::IdentifierNode $.module-id;
 	has @.parameters;
 	has $.author = Nil;
 	has $.date = Nil;
@@ -82,30 +76,6 @@ class ModuleNode does ASTNode {
 	}
 }
 
-class ParamDeclNode does ASTNode {
-	has IdentifierNode $.name;
-	has Str $.type;
-	has Any $.default = Nil;  # Optional initialization expression
-
-	method Str() { 
-		"ParamDeclNode(name => '" ~ $.name.name ~ "', type => '" ~ $.type.trim ~ "', default => " ~
-		($!default.defined ?? $!default.Str !! 'Nil') ~ ")"
-	}
-
-	method dump($indent="") {
-		say $indent ~ "ParamDeclNode:";
-		say $indent ~ "  name: " ~ $.name.name;
-		say $indent ~ "  type: " ~ $.type;
-		if $!default.defined {
-			say $indent ~ "  default:";
-			$!default ~~ ASTNode ?? $!default.dump($indent ~ "    ") !! say $indent ~ "    $!default";
-		} else {
-			say $indent ~ "  default: (none)";
-		}
-		say $indent ~ self.line-info;
-	}
-}
-
 class SayNode does ASTNode {
 	has $.expr;  # The expression to say
 
@@ -118,32 +88,29 @@ class SayNode does ASTNode {
 	}
 }
 
-class VarDeclNode does ASTNode {
-	has IdentifierNode $.name;
-	has Str $.type;
-	has Any $.init = Nil;  # Optional initialization expression
-
-	method Str() { "VarDeclNode(name => '$.name', type => '$.type', init => '$.init')" }
-
-	method dump($indent="") {
-		say $indent ~ "VarDeclNode:";
-		say $indent ~ "  name: " ~ $.name.name;
-		say $indent ~ "  type: " ~ $.type;
-		say $indent ~ "  init: " ~ ($!init // 'Nil');
-		say $indent ~ self.line-info;
-	}
-}
-
 method build(Str $type, :$src = -1, *%args) {
 	# Factory method to create nodes based on type
 	given $type {
-		when 'IntLiteralNode' 	{ IntLiteralNode.new(|%args, :source-line($src)) }
-		when 'ModuleNode' 		{ ModuleNode.new(|%args, :source-line($src)); 		}
-		when 'IdentifierNode' 	{ IdentifierNode.new(|%args, :source-line($src));  	}
-		when 'VarDeclNode'		{ VarDeclNode.new(|%args, :source-line($src)); 		}
-		when 'SayNode'			{ SayNode.new(|%args, :source-line($src)); 			}
-		when 'ParamDeclNode'	{ ParamDeclNode.new(|%args, :source-line($src)); 	}
 		when 'ID_DivisionNode'  { ID_DivisionNode.new(|%args, :source-line($src));  }
+		when 'IntLiteralNode' 	{ IntLiteralNode.new(|%args, :source-line($src)) }
+		# | 'BinaryOpNode'      
+		# { $.expr-factory.build($type, |%args, :source-line($src)); }
+
+		when 'ModuleNode' 		{ ModuleNode.new(|%args, :source-line($src)); 		}
+		when 'IdentifierNode' 	{ Xenober16::AST::IdentifierNode.new(|%args, :source-line($src));  	}
+		# { $.module-factory.build($type, |%args, :source-line($src)); }
+
+		when 'SayNode'			{ SayNode.new(|%args, :source-line($src)); 			}
+		# 'AssignNode' | 'IfNode' 
+		# { $.stmt-factory.build($type, |%args, :source-line($src)); }
+
+		when 'VarDeclNode' | 'ParamDeclNode' | 'ConstDeclNode' { 
+			# Handle VarDeclNode, ParamDeclNode, ConstDeclNode
+			# These nodes are defined in DeclarationNodeFactory.rakumod
+			# so we assume they are imported or available in the same context
+			$.decl-factory.build($type, |%args, :source-line($src));
+		}
+
 		default 				{ die "Unknown node type: $type"; 		}
 	}
 }

@@ -35,7 +35,13 @@ rule end-module {
 
 rule data-division {
 	'DATA DIVISION.' 
+	<constant-storage-section>?
 	<working-storage-section>?
+}
+
+rule constant-storage-section {
+	'CONSTANT-STORAGE SECTION.' 
+	<const-decl>*
 }
 
 rule working-storage-section {
@@ -46,6 +52,10 @@ rule working-storage-section {
 rule code-division {
 	'CODE DIVISION.' 
 	<statement>*
+}
+
+rule const-decl {
+	<identifier> ':=' <expression> ';' 
 }
 
 rule var-decl {

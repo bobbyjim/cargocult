@@ -4,6 +4,11 @@ use Xenober16::Builder::NodeFactory;
 
 has $.node-factory = Xenober16::Builder::NodeFactory.new; # inject the NodeFactory
 
+#has $.module-builder = Xenober16::Builder::ModuleBuilder.new(node-factory => $.node-factory);
+#has $.declaration-builder = Xenober16::Builder::DeclarationBuilder.new(node-factory => $.node-factory);
+#has $.statement-builder = Xenober16::Builder::StatementBuilder.new(node-factory => $.node-factory);
+#has $.expression-builder = Xenober16::Builder::ExpressionBuilder.new(node-factory => $.node-factory);
+
 method trace($msg) {        # to control the debug output
 	say $msg;
 }
@@ -93,16 +98,14 @@ method identifier($/) {
 }
 
 method data-division($/) {
-    # Get the working-storage-section node, which already makes an array of vars
-    my $ws = $<working-storage-section>;
-    my @vars = $ws ?? $ws.made !! ();
-    self.trace("Variables in data-division (before flatten): {@vars.perl}");
+    my @consts = $<constant-storage-section> ?? $<constant-storage-section>.made !! ();
+    my @vars   = $<working-storage-section> ?? $<working-storage-section>.made !! ();
     # @vars is something like ( [VarDeclNode, VarDeclNode,...] )
 
     # Flatten it so @vars is a flat list of VarDeclNodes:
-    my @flat_vars = @vars.flat;
-    self.trace("Variables in data-division (flattened): {@flat_vars.perl}");
-    make @flat_vars;
+    my @flat = flat @consts, @vars;
+    self.trace("Flattened data-division: {@flat.perl}");
+    make @flat;
 }
 
 method working-storage-section($/) {
@@ -112,6 +115,28 @@ method working-storage-section($/) {
     make @vars.flat;
 }
 
+method constant-storage-section($/) {
+	self.trace("Building constant-storage-section: $/");
+	my @consts = $<const-decl>.map(*.made);
+	self.trace("Constants in constant-storage-section: {@consts.perl}");
+	make @consts;
+}
+
+method const-decl($/) {
+	self.trace("Building const-decl: $/");
+	my $name = $<identifier>.made;
+	my $value = $<expression>.made;  # Expression is mandatory for consts
+
+	my $line = $/.orig.substr(0, $/.from).lines.elems;
+	my $node = $.node-factory.build(
+		'ConstDeclNode', 
+		:name($name), 
+		:value($value), 
+		:src($line));
+	self.trace("Created ConstDeclNode: $node");
+	make $node;
+}
+
 method var-decl($/) {
 	self.trace("Building var-decl: $/");
 	my $name = $<identifier>.made;
@@ -119,7 +144,12 @@ method var-decl($/) {
     my $init = $<expression> ?? $<expression>.made !! Nil;  # Handle optional expression
 
 	my $line = $/.orig.substr(0, $/.from).lines.elems;
-	my $node = $.node-factory.build('VarDeclNode', :name($name), :type($type), :init($init), :src($line));
+	my $node = $.node-factory.build(
+		'VarDeclNode', 
+		:name($name), 
+		:type($type), 
+		:init($init), 
+		:src($line));
 	self.trace("Created VarDeclNode: $node");
 	make $node;
 }
@@ -127,7 +157,7 @@ method var-decl($/) {
 method expression($/) {
 	self.trace("Building expression: $/");
 	my $line = $/.orig.substr(0, $/.from).lines.elems;
-	
+
 	if $<int-literal> {
 		my $value = +$<int-literal>;
 		my $node = $.node-factory.build('IntLiteralNode', :value($value), :src($line));
