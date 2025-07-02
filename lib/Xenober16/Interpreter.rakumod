@@ -5,6 +5,10 @@ use Xenober16::AST::ConstDeclNode;
 use Xenober16::AST::ParamDeclNode;
 use Xenober16::AST::VarDeclNode;    
 use Xenober16::AST::IdentifierNode;
+use Xenober16::AST::IntLiteralNode;
+use Xenober16::AST::ModuleNode;
+use Xenober16::AST::SayNode;   
+
 use Xenober16::Builder::NodeFactory;
 
 has %!symbols;
@@ -19,7 +23,7 @@ multi method interpret(Int $value) { $value }
 multi method interpret(Str $value) { $value }
 multi method interpret(Nil) { Nil }
 
-multi method interpret(Xenober16::Builder::NodeFactory::ModuleNode $node) {
+multi method interpret(Xenober16::AST::ModuleNode $node) {
 	say "Interpreting ModuleNode: "~ $node.metadata.perl;
 
 #    for $node.constants -> $const {
@@ -52,7 +56,7 @@ multi method interpret(Xenober16::AST::IdentifierNode $node) {
     }
 }
 
-multi method interpret(Xenober16::Builder::NodeFactory::IntLiteralNode $node) {
+multi method interpret(Xenober16::AST::IntLiteralNode $node) {
     say "Interpreting IntLiteralNode: " ~ $node.value;
     return $node.value;
 }
@@ -90,7 +94,7 @@ multi method interpret(Xenober16::AST::VarDeclNode $node) {
     return Nil;
 }
 
-multi method interpret(Xenober16::Builder::NodeFactory::SayNode $node) {
+multi method interpret(Xenober16::AST::SayNode $node) {
     say "Interpreting Say statement";
     my $result = self.interpret($node.expr);
     say "Output: $result";

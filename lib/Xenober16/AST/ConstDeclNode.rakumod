@@ -1,8 +1,7 @@
 use Xenober16::AST::ASTNode;
+use Xenober16::AST::IdentifierNode;
 
-unit class Xenober16::AST::ConstDeclNode does ASTNode;
-
-	use Xenober16::AST::IdentifierNode;
+class Xenober16::AST::ConstDeclNode does Xenober16::AST::ASTNode {
 
 	has Xenober16::AST::IdentifierNode $.name;  
 	has Any $.value;  # Constant value, must be defined
@@ -17,10 +16,10 @@ unit class Xenober16::AST::ConstDeclNode does ASTNode;
 		say $indent ~ "  name: " ~ $.name.name;
 		if $!value.defined {
 			say $indent ~ "  value:";
-			$!value ~~ ASTNode ?? $!value.dump($indent ~ "    ") !! say $indent ~ "    $!value";
+			$!value ~~ Xenober16::AST::ASTNode ?? $!value.dump($indent ~ "    ") !! say $indent ~ "    $!value";
 		} else {
 			say $indent ~ "  value: (none)";
 		}
 		say $indent ~ self.line-info;
 	}
-	
+}

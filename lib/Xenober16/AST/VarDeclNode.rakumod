@@ -1,8 +1,7 @@
 use Xenober16::AST::ASTNode;
-
-unit class Xenober16::AST::VarDeclNode does ASTNode;
-
 use Xenober16::AST::IdentifierNode;
+
+class Xenober16::AST::VarDeclNode does Xenober16::AST::ASTNode {
 
 	has Xenober16::AST::IdentifierNode $.name;
 	has Str $.type;
@@ -17,4 +16,4 @@ use Xenober16::AST::IdentifierNode;
 		say $indent ~ "  init: " ~ ($!init // 'Nil');
 		say $indent ~ self.line-info;
 	}
-
+}

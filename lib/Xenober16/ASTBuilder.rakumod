@@ -4,11 +4,6 @@ use Xenober16::Builder::NodeFactory;
 
 has $.node-factory = Xenober16::Builder::NodeFactory.new; # inject the NodeFactory
 
-#has $.module-builder = Xenober16::Builder::ModuleBuilder.new(node-factory => $.node-factory);
-#has $.declaration-builder = Xenober16::Builder::DeclarationBuilder.new(node-factory => $.node-factory);
-#has $.statement-builder = Xenober16::Builder::StatementBuilder.new(node-factory => $.node-factory);
-#has $.expression-builder = Xenober16::Builder::ExpressionBuilder.new(node-factory => $.node-factory);
-
 method trace($msg) {        # to control the debug output
 	say $msg;
 }
@@ -20,7 +15,7 @@ method TOP($/) {
     my @vars = $<data-division> ?? $<data-division>.made !! ();
     my @stmts = $<code-division> ?? $<code-division>.made !! ();
 
-	self.trace("Building ModuleNode with id {$id-node}, vars: {@vars}, stmts: {@stmts}");
+	self.trace("Building ModuleNode with id={$id-node}, vars={@vars}, stmts={@stmts}");
 
 	my $line = $/.orig.substr(0, $/.from).lines.elems;
 	my $node = $.node-factory.build(
