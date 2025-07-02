@@ -121,7 +121,8 @@ Compiler generates code to handle masking and shifting.
 	* LAST [IF <expr>];
 	* SAY <expr> [IF <expr>];
 * CASE statements (C-style comparisons, and chained-if semantics in the interpreter).
-* No GOTO.
+* ASSERT expression;
+* ASSERT expression ELSE "Optional message";
 
 # X. Modules and Imports:
 
@@ -153,8 +154,17 @@ Allows embedding 6502 assembly code directly within the language. For example, s
 * No dynamic memory allocation (NEW, MALLOC, FREE, DISPOSE).
 * No standalone Boolean Type.
 
-# XIV. Grammar Notes:
+# XIV. Standard Library:
 
+* VERA
+* SPRITE
+* KERNAL
+* MEM
+* MATH
+
+# XV. Grammar Notes:
+
+* Constant expressions are always folded at compile time, including bitwise ops, math, and field offsets.
 * This is a high-level sketch intended for reference, not a full parser grammar.      
 * Macro support via #DEFINE works well with the static model; preprocess these before parsing expressions.
 * ENUM SECTION is modeled explicitly like CONST SECTION.
@@ -241,7 +251,7 @@ Allows embedding 6502 assembly code directly within the language. For example, s
                           | WhileStmt
                           | ReturnStmt
                           | InlineProc
-                          | "ASSERT" Expression ";"
+                          | "ASSERT" Expression [ "ELSE" StringLiteral ] ";"
                           | SayStmt
         
         AssignStmt      ::= LValue ":=" Expression ";"
