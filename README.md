@@ -166,7 +166,7 @@ Allows embedding 6502 assembly code directly within the language. For example, s
 
 * Constant expressions are always folded at compile time, including bitwise ops, math, and field offsets.
 * This is a high-level sketch intended for reference, not a full parser grammar.      
-* Macro support via #DEFINE works well with the static model; preprocess these before parsing expressions.
+* MACRO DIVISION works well with the static model; preprocess these before parsing expressions.
 * ENUM SECTION is modeled explicitly like CONST SECTION.
 * Array slices use an extended lvalue grammar: buffer[64..128] or buffer[3].
 * Pragmas attach to var-decl or proc-decl. Store these in the AST as a list of symbols and optional values.
@@ -180,6 +180,7 @@ Allows embedding 6502 assembly code directly within the language. For example, s
                             [ DateLine ]
                             [ DescriptionLine ]
                             [ LicenseLine ]
+                            [ MacroDivision ]
                             [ DataDivision ]
                             [ TypeDivision ]
                             [ ProcedureDivision ]
@@ -194,23 +195,25 @@ Allows embedding 6502 assembly code directly within the language. For example, s
         
         TextLine        ::= (any non-newline characters)
         
+        ParamList       ::= "(" ParamDecl { "," ParamDecl } ")"
         ParamDecl       ::= Identifier ":" TypeName [ ":=" Expression ]
         
         DataDivision    ::= "DATA DIVISION."
-                            [ ConstantStorageSection ]
                             [ WorkingStorageSection ]
                             [ EnumSection ]
-        
-        ConstantStorageSection ::= "CONSTANT-STORAGE SECTION."
-                                   { ConstDecl }
-        
+
+        MacroDivision    ::= "MACRO DIVISION."
+                            { MacroDecl }
+                                    
         WorkingStorageSection  ::= "WORKING-STORAGE SECTION."
                                    { VarDecl }
         
         EnumSection     ::= "ENUM SECTION."
                             { EnumDecl }
         
-        ConstDecl       ::= Identifier ":=" Expression ";"
+        MacroDecl       ::= Identifier ":=" Expression ";"
+                          | Identifier ParamList ":=" Expression ";"
+
         VarDecl         ::= Identifier ":" TypeName [ ":=" Expression ] [ PragmaList ] ";"
         
         EnumDecl        ::= "ENUM" Identifier "{" EnumEntry { "," EnumEntry } "}" ";"
@@ -230,11 +233,8 @@ Allows embedding 6502 assembly code directly within the language. For example, s
         FieldDecl       ::= Identifier { "," Identifier } ":" TypeName ";"
         
         ProcedureDivision ::= "CODE DIVISION."
-                              { MacroDecl }
                               { ProcDecl }
-        
-        MacroDecl       ::= "#DEFINE" Identifier "=" Expression ";"
-        
+                
         ProcDecl        ::= [ PragmaList ]
                             "PROC" Identifier "(" [ ParamDecl { "," ParamDecl } ] ")" [ ":" TypeName ]
                             [ "=" Identifier ]       (* Optional manual mangled name *)
