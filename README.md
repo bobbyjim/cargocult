@@ -152,3 +152,115 @@ Allows embedding 6502 assembly code directly within the language. For example, s
 * No real numbers (floating-point).
 * No dynamic memory allocation (NEW, MALLOC, FREE, DISPOSE).
 * No standalone Boolean Type.
+
+# XIV. Grammar Notes:
+
+* This is a high-level sketch intended for reference, not a full parser grammar.      
+* Macro support via #DEFINE works well with the static model; preprocess these before parsing expressions.
+* ENUM SECTION is modeled explicitly like CONST SECTION.
+* Array slices use an extended lvalue grammar: buffer[64..128] or buffer[3].
+* Pragmas attach to var-decl or proc-decl. Store these in the AST as a list of symbols and optional values.
+* Procedure overloading is resolved by mangling names based on the parameter types — ASTBuilder will handle this during symbol table construction or codegen.
+* Inline procs are simply procedure literals, no captures — just wrap in a small ProcLiteralNode with an anonymous name.
+
+        Program         ::= "MODULE IDENTIFICATION DIVISION."
+                            ModuleID
+                            [ ParametersLine ]
+                            [ AuthorLine ]
+                            [ DateLine ]
+                            [ DescriptionLine ]
+                            [ LicenseLine ]
+                            [ DataDivision ]
+                            [ TypeDivision ]
+                            [ ProcedureDivision ]
+                            "END MODULE."
+        
+        ModuleID        ::= "MODULE-ID:" Identifier
+        ParametersLine  ::= "PARAMETERS:" ParamDecl { "," ParamDecl } ";"
+        AuthorLine      ::= "AUTHOR:" TextLine
+        DateLine        ::= "DATE:" TextLine
+        DescriptionLine ::= "DESCRIPTION:" TextLine
+        LicenseLine     ::= "LICENSE:" TextLine
+        
+        TextLine        ::= (any non-newline characters)
+        
+        ParamDecl       ::= Identifier ":" TypeName [ ":=" Expression ]
+        
+        DataDivision    ::= "DATA DIVISION."
+                            [ ConstantStorageSection ]
+                            [ WorkingStorageSection ]
+                            [ EnumSection ]
+        
+        ConstantStorageSection ::= "CONSTANT-STORAGE SECTION."
+                                   { ConstDecl }
+        
+        WorkingStorageSection  ::= "WORKING-STORAGE SECTION."
+                                   { VarDecl }
+        
+        EnumSection     ::= "ENUM SECTION."
+                            { EnumDecl }
+        
+        ConstDecl       ::= Identifier ":=" Expression ";"
+        VarDecl         ::= Identifier ":" TypeName [ ":=" Expression ] [ PragmaList ] ";"
+        
+        EnumDecl        ::= "ENUM" Identifier "{" EnumEntry { "," EnumEntry } "}" ";"
+        EnumEntry       ::= Identifier [ "=" Expression ]
+        
+        TypeDivision    ::= "TYPE DIVISION."
+                            { TypeDecl }
+        
+        TypeDecl        ::= "TYPE" Identifier "=" TypeExpr ";"
+        
+        TypeExpr        ::= TypeName
+                          | "ARRAY" Expression "OF" TypeExpr
+                          | "SLICE" "OF" TypeExpr
+                          | "RECORD" { FieldDecl } "END"
+                          | "PROC" "(" [ ParamDecl { "," ParamDecl } ] ")" [ ":" TypeName ]
+        
+        FieldDecl       ::= Identifier { "," Identifier } ":" TypeName ";"
+        
+        ProcedureDivision ::= "CODE DIVISION."
+                              { MacroDecl }
+                              { ProcDecl }
+        
+        MacroDecl       ::= "#DEFINE" Identifier "=" Expression ";"
+        
+        ProcDecl        ::= [ PragmaList ]
+                            "PROC" Identifier "(" [ ParamDecl { "," ParamDecl } ] ")" [ ":" TypeName ]
+                            [ "=" Identifier ]       (* Optional manual mangled name *)
+                            ProcBody
+        
+        ProcBody        ::= "BEGIN" { Statement } "END" Identifier ";"
+        
+        PragmaList      ::= "[" Pragma { "," Pragma } "]"
+        Pragma          ::= Identifier [ "(" Expression ")" ]
+        
+        Statement       ::= AssignStmt
+                          | CallStmt
+                          | IfStmt
+                          | WhileStmt
+                          | ReturnStmt
+                          | InlineProc
+                          | "ASSERT" Expression ";"
+                          | SayStmt
+        
+        AssignStmt      ::= LValue ":=" Expression ";"
+        CallStmt        ::= Identifier "(" [ Expression { "," Expression } ] ")" ";"
+        ReturnStmt      ::= "RETURN" [ Expression ] ";"
+        IfStmt          ::= "IF" Expression "THEN" { Statement }
+                            { "ELSIF" Expression "THEN" { Statement } }
+                            [ "ELSE" { Statement } ]
+                            "END" ";"
+        WhileStmt       ::= "WHILE" Expression "DO" { Statement } "END" ";"
+        
+        InlineProc      ::= "PROC" "(" [ ParamDecl { "," ParamDecl } ] ")" [ ":" TypeName ]
+                            "BEGIN" { Statement } "END"
+        
+        SayStmt         ::= "SAY" Expression ";"
+        
+        LValue          ::= Identifier [ "[" Expression [ ".." Expression ] "]" ]
+        
+        Expression      ::= (integer literal | identifier | ... )   (* Placeholder *)
+        TypeName        ::= "INT16" | "BYTE" | "WORD" | "CHAR" | Identifier
+        Identifier      ::= (starts with letter/underscore, then alphanumerics)
+                
