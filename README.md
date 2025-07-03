@@ -192,9 +192,11 @@ Allows embedding 6502 assembly code directly within the language. For example, s
         DateLine        ::= "DATE:" TextLine
         DescriptionLine ::= "DESCRIPTION:" TextLine
         LicenseLine     ::= "LICENSE:" TextLine
+        BankLine        ::= "BANK-ID:" BankNumber
         
         TextLine        ::= (any non-newline characters)
-        
+        BankNumber      ::= [1..9]\d?
+
         ParamList       ::= "(" ParamDecl { "," ParamDecl } ")"
         ParamDecl       ::= Identifier ":" TypeName [ ":=" Expression ]
         
