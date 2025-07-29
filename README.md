@@ -1,9 +1,7 @@
 # I. Xenober16
-"A mundane transpiler for annoying times"
+This is a retro-aesthetic language for transpiling to something like cc65 or Prog8.
 
-In short, this is for transpiling to something like cc65 or Prog8.
-
-Retro aesthetics, inspired by Oberon's readability and structure combined with COBOL's division-based organization. 
+It is inspired by Oberon's syntax combined with COBOL's division-based organization. 
 
 The AST is, for all practical purposes, the Intermediate Representation. I only need the AST Intermediate Representation > Code to be structurally and semantically valid.
 
@@ -16,56 +14,122 @@ Transpiling gives me shortcuts.  I don't need to implement:
 * resolving cross-module calls
 
 # II. Language Structure
-
-The language follows a rigid division-based structure.
-
 * Note: The file passed to the xen16 command is the MAIN module.
+* Divisions: Modular, COBOL‑inspired clarity.
 
-## MODULE IDENTIFICATION DIVISION: (Mandatory)
+Program           <- IdentificationDiv ImportDiv? MemoryDiv? DataDiv? CodeDiv
+
+## Lexicals
+
+   Identifier        <- [A-Za-z_] [A-Za-z0-9_]*
+   Number            <- [0-9]+
+   HexLiteral        <- '$' [0-9A-Fa-f]+
+   StringLiteral     <- '"' [^"]* '"'
+
+## Identification Division (mandatory)
 This section is parsed first and acts as a "header" and metadata holder for the module.
 
-    MODULE-ID: (Mandatory): Designates the module name.
-    PARAMETERS: (Optional): Template values for instances of this module.
-    AUTHOR: (Optional)
-    DATE: (Optional)
-    DESCRIPTION: (Optional)
-    LICENSE: (Optional)
+   IdentificationDiv <- 'IDENTIFICATION DIVISION.' IdentifierSection* 'END IDENTIFICATION DIVISION.'
+   IdentifierSection <- IdentifierDef ';'
+   IdentifierDef     <- Identifier '=' StringLiteral
 
-## IMPORT DIVISION: (Optional)
+- MODULE-ID: (Mandatory): Designates the module name.
+- PARAMETERS: (Optional): Template values for instances of this module.
+- AUTHOR: (Optional)
+- DATE: (Optional)
+- DESCRIPTION: (Optional)
+- LICENSE: (Optional)
+
+## Import Division (Optional)
 USE statements (one per line): Declares module dependencies.
 
 		USE MyModule.
 		USE stdio.
 		USE string.
 
-## DATA DIVISION: (Optional)
+## Memory Division (Optional)
+* AREAs: First-class in Placement via @Identifier.
+
+   MemoryDiv         <- 'MEMORY DIVISION.' MemoryDecl+ 'END MEMORY DIVISION.'
+   MemoryDecl        <- 'AREA' Identifier StorageSpec SizeSpec ';'
+   StorageSpec       <- 'BANK' '(' BankNumber ',' Address ')'
+                      / 'RAM'  '(' Address ')'
+   SizeSpec          <- 'SIZE' '(' Number ')'
+   BankNumber        <- Number
+   Address           <- HexLiteral
+
+## Data Division (Optional)
+* Slices: Can reference an existing array directly with SLICE[myArray, 10..20].
+* Enums: Simple, no explicit values — keeps it clean.
+
 WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
- 
-    myVar : INT16 := 12_000;
 
-* Oberon-style syntax for declarations (e.g., variableName : DataType := initialValue;).
-* Type definitions (records, arrays) are also located in this section.
+   DataDiv           <- 'DATA DIVISION.' DataSection+ 'END DATA DIVISION.'
+   DataSection       <- WorkingStorageSection
+   WorkingStorageSection
+                      <- 'WORKING-STORAGE SECTION.' VarDecl+ 'END WORKING-STORAGE SECTION.'
+   VarDecl           <- Identifier ':' TypeSpec Placement? ';'
+   Placement         <- '@' Identifier
+   
+   TypeSpec          <- BaseType
+                      / ArrayType
+                      / SliceType
+                      / RecordType
+                      / EnumType
+   BaseType          <- 'INT8' / 'INT16' / 'UINT8' / 'UINT16' / 'CHAR'
+   
+   ArrayType         <- 'ARRAY' '[' Number ']' 'OF' TypeSpec
+   SliceType         <- 'SLICE' '[' Identifier ',' Range ']' 
+   RecordType        <- 'RECORD' RecordField+ 'END RECORD'
+   RecordField       <- Identifier ':' TypeSpec ';'
+   EnumType          <- 'ENUM' EnumMemberList
+   EnumMemberList    <- Identifier (',' Identifier)*
+   
+   Range             <- Number '..' Number
+                      / Number '..'
 
-## CODE DIVISION: (Optional)
+## Code Division (Optional)
+* Statements: Structured and Oberon-like, but adapted to Xenober16’s flavor.
 
-    WHILE myVar > 0 DO
-	   SAY myVar;
-	   myVar := myVar - 10;
-	END
+   CodeDiv           <- 'CODE DIVISION.' ProcDecl+ 'END CODE DIVISION.'
+   ProcDecl          <- 'PROCEDURE' Identifier '(' ParamList? ')' ';' 
+                        Block
+                        'END' Identifier ';'
+   ParamList         <- Param (',' Param)*
+   Param             <- Identifier ':' TypeSpec   
 
-* Contains executable code.
-* Oberon-style syntax for procedures and the main program body.
-* BEGIN and END keywords mark the start and end of procedures.
-* The END tag does not include the MODULE-ID.
-* No BEGIN keyword is used to demarcate the start of the main program body.
+   Block             <- 'BEGIN' Statement* 'END'
+   Statement         <- Assignment
+                      / IfStmt
+                      / CaseStmt
+                      / LoopStmt
+                      / ProcCall
+                      / SystemCall
+                      / ';'   # empty stmt allowed   
 
-# III. Data Types
-* INT8, INT16, INT24, UINT8, UINT16, UINT24.
-* CHAR.
-* Fixed-Point: maybe.
-* Arrays: Statically sized arrays.
-* Records (Structures): Used for grouping data.
-* Pointers: Supported for memory manipulation.
+   Assignment        <- Identifier Placement? ':=' Expression ';'
+   ProcCall          <- Identifier '(' ArgList? ')' ';'
+   ArgList           <- Expression (',' Expression)*
+   SystemCall        <- '%SYS.' Identifier '(' ArgList? ')' ';'   
+
+   IfStmt            <- 'IF' Expression 'THEN' Statement+ ( 'ELSE' Statement+ )? 'END IF;'
+   CaseStmt          <- 'CASE' Expression 'OF' CaseBranch+ 'END CASE;'
+   CaseBranch        <- Literal ':' Statement+
+   LoopStmt          <- ForLoop / WhileLoop
+   ForLoop           <- 'FOR' Identifier ':=' Expression 'TO' Expression Block 'END FOR;'
+   WhileLoop         <- 'WHILE' Expression Block 'END WHILE;'   
+
+   Expression        <- OrExpr
+   OrExpr            <- AndExpr ( 'OR' AndExpr )*
+   AndExpr           <- RelExpr ( 'AND' RelExpr )*
+   RelExpr           <- AddExpr ( RelOp AddExpr )*
+   RelOp             <- '=' / '<>' / '<' / '<=' / '>' / '>='
+   AddExpr           <- MulExpr ( ('+' / '-') MulExpr )*
+   MulExpr           <- Primary ( ('*' / '/' / 'MOD') Primary )*
+   Primary           <- Number
+                      / StringLiteral
+                      / Identifier
+                      / '(' Expression ')'
 
 # IV. Memory Management
 Annotations: Used to specify memory locations for variables.
@@ -273,6 +337,6 @@ Allows embedding 6502 assembly code directly within the language. For example, s
         LValue          ::= Identifier [ "[" Expression [ ".." Expression ] "]" ]
         
         Expression      ::= (integer literal | identifier | ... )   (* Placeholder *)
-        TypeName        ::= "INT16" | "BYTE" | "WORD" | "CHAR" | Identifier
+        TypeName        ::= "INT16" | "BYTE" | "UINT16" | "UBYTE" | "CHAR" | "INT32" | "UINT32" | Identifier
         Identifier      ::= (starts with letter/underscore, then alphanumerics)
-                
+
