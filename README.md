@@ -40,8 +40,10 @@ Divisions: Modular, COBOL‑inspired clarity.
      ModuleHeader      <- 'MODULE' Identifier ParamList? ';'
      ParamList         <- '(' ParamDecl (',' ParamDecl)* ')'
      ParamDecl         <- Identifier ':' ParamType (':=' ConstExpr)?   # optional default
-     ParamType         <- 'INT8' / 'INT16' / 'UINT8' / 'UINT16' / 'CHAR' / 'BOOL'
-     ConstExpr         <- Number / HexLiteral / StringLiteral
+     ParamType         <- 'INT8' / 'INT16' / 'UINT8' / 'UINT16' / 'CHAR'
+     ConstExpr         <- Number / HexLiteral / StringLiteral / QualIdent
+
+Note: ConstExpr can reference Macro Division identifiers.
 
 ## Metadata Division (optional)
 This section is a metadata holder.
@@ -68,12 +70,13 @@ This section is a metadata holder.
 ## Import Division (Optional)
 USE statements (one per line): Declares module dependencies.
 
-		USE MyModule.
+		USE MyModule AS foo;
 		USE stdio.
 		USE string.
 
      ImportDiv <- 'IMPORT DIVISION.' UseThing* 'END IMPORT DIVISION.'
-     UseThing  <- 'USE ' Identifier ';'
+     UseThing  <- 'USE' Identifier (ALIAS)? ';'
+     Alias     <- 'AS' Identifier
 
 * To call a method in another module, specify the namespace e.g. OtherModule.AMethod()
 * The compiler enforces namespace qualifications.
@@ -81,14 +84,13 @@ USE statements (one per line): Declares module dependencies.
 Standard library ideas:
 * VERA
 * SPRITE
-* KERNAL
 * MEM
 * MATH
 
 ## Macro Division (optional)
 Formal grammar for MACRO DIVISION is deferred. Implementations may ignore the section.
 
-Plan: a simple Constant-style text substitution at parse time. Works for constants, maybe even short inline expressions. Low risk and easy.
+MACRO DIVISION works well with the static model; preprocess these before parsing expressions.  Or, text subsitution at parse time.
 
      MACRO DIVISION.
          MAX_PLAYERS := 4;
@@ -109,20 +111,63 @@ AREAs: First-class in Placement via @Identifier.
      BankNumber        <- Number
      Address           <- HexLiteral
 
+### AREA Example
+AREA is used to map out the memory of the system, in one place. 
+
+     MEMORY DIVISION.
+         AREA MyArea BANK(1, $C000) SIZE(256);
+         AREA SpriteArea RAM($0400) SIZE(128);
+     END MEMORY DIVISION.
+
+Allow Inline Area Placement: Allow variables to be assigned to areas directly within their declarations using the @ syntax:
+
+     DATA DIVISION.
+         WORKING-STORAGE SECTION.
+             VAR x : INT16 @MyArea;        // x is located in MyArea
+             VAR sprite : Sprite @SpriteArea;  // sprite is located in SpriteArea
+         END WORKING-STORAGE SECTION.
+     END DATA DIVISION.
+
+
 ## Data Division (Optional)
 A Data Division may contain at most one Working‑Storage Section, one Enum Section, and one Assertion Section.
-
-Slices: Can reference an existing array directly with SLICE[myArray, 10..20].
 
 Enums: Simple, no explicit values, UINT8-backed starting at zero.
 
 Assertions: Compile‑time invariants. Like guardrails in the source, enforced before code generation. If the assertion fails, compilation halts with an error. No runtime code is generated for assertions.
 
+### Arrays
+Arrays are declared with a fixed size at compile time (e.g., ARRAY[100] OF INT16).
+Arrays are allocated in static memory (within an AREA or a default memory region).
+Arrays are passed by reference to procedures (meaning that the procedure receives a pointer to the original array data).
+Use a slice-like syntax to do “pointer arithmetic”-like things.
+No need for a specific SLICE if you can manipulate array data with a range index.
+ 
+     VAR myArray : ARRAY[100] OF INT16;
+     VAR myValue : INT16;
+     myValue := myArray[10];       // Access a single element
+     myArray[20..29] := 0;    //Set ten elements of the array to zero
+
+ 
+Slices: Views into Arrays
+
+Slice indexing uses Range syntax within brackets.
+
+Purpose: Slices provide a way to access a contiguous portion of an array without creating a separate copy of the data.
+Implementation:
+A slice is essentially a descriptor that contains:
+* A pointer to the base address of the array.
+* A starting index within the array.
+* An ending index (or length) of the slice.
+
+When you access an element of a slice (e.g., mySlice[5]), the compiler generates code to calculate the actual memory address by adding the starting index of the slice to the base address of the array and then adding the element offset (5 in this case).
 
      ASSERT SECTION.
          ASSERT SIZEOF(MyRecord) <= 32;
          ASSERT MAX_PLAYERS <= 8;
      END ASSERT SECTION.
+
+### Grammar
 
 WORKING-STORAGE SECTION. Contains variable and type declarations.
 
@@ -135,13 +180,11 @@ WORKING-STORAGE SECTION. Contains variable and type declarations.
      
      TypeSpec          <- BaseType
                         / ArrayType
-                        / SliceType
                         / RecordType
 
      BaseType          <- 'INT8' / 'INT16' / 'UINT8' / 'UINT16' / 'CHAR'
      
      ArrayType         <- 'ARRAY' '[' ConstExpr ']' 'OF' TypeSpec
-     SliceType         <- 'SLICE' '[' Identifier ',' Range ']' 
      RecordType        <- 'RECORD' RecordField+ 'END RECORD'
      RecordField       <- Identifier ':' TypeSpec ';'
       
@@ -155,7 +198,7 @@ ENUM Section. Contains enum declarations.
 ASSERT Section. Contains assertions.
 
      AssertionSection   <- 'ASSERT SECTION.' AssertDecl+ 'END ASSERT SECTION.'
-     AssertDecl         <- 'ASSERT' Expression ';'
+     AssertDecl         <- 'ASSERT' Expression (':' StringLiteral)? ';'
 
 ## Code Division (Optional)
 Statements: Structured and Oberon-like, but adapted to Xenober16’s flavor.
@@ -174,7 +217,7 @@ Grammar:
                           Block
                           'END' Identifier ';'
      ParamList         <- Param (',' Param)*
-     Param             <- Identifier ':' TypeSpec   
+     Param             <- Identifier ':' TypeSpec (':=' ConstExpr)?
   
      Block             <- Statement*
      Statement         <- Assignment
@@ -183,21 +226,20 @@ Grammar:
                         / LoopStmt
                         / ProcCall
                         / SystemCall
-                        / SimpleStmt TrailingIf?
                         / ';'   # empty stmt allowed   
 
-     TrailingIf        <- 'IF' Expression ';'
-     SimpleStmt        <- 'LAST'
-                        / 'SAY' Expression
      Assignment        <- Identifier ':=' Expression ';'
      ProcCall          <- Identifier '(' ArgList? ')' ';'
-     ArgList           <- Expression (',' Expression)*
-     SystemCall        <- '%SYS.' Identifier '(' ArgList? ')' ';'   
+     ArgList   <- NamedArg (',' NamedArg)*
+     NamedArg  <- Identifier ':=' Expression
+
+     SystemCall        <- QualIdent '(' ArgList? ')' ';'   
   
      IfStmt            <- 'IF' ExprStmt ( 'ELSIF' ExprStmt )* ( 'ELSE' Statement+ )? 'END IF;'
      ExprStmt          <- Expression 'THEN' Statement+
      CaseStmt          <- 'CASE' Expression 'OF' CaseBranch+ ( 'ELSE' Statement+ )? 'END CASE;'
      CaseBranch        <- (Literal / SimpleRange) ':' Statement+
+     Literal           <- Number / HexLiteral / StringLiteral
      LoopStmt          <- ForLoop / WhileLoop
      ForLoop           <- 'FOR' Identifier ':=' Expression 'TO' Expression Block 'END FOR;'
      WhileLoop         <- 'WHILE' Expression Block 'END WHILE;'
@@ -209,21 +251,18 @@ Grammar:
      RelOp             <- '=' / '<>' / '<' / '<=' / '>' / '>='
      AddExpr           <- MulExpr ( ('+' / '-') MulExpr )*
      MulExpr           <- Primary ( ('*' / '/' / 'MOD') Primary )*
-     Primary           <- Number
+     QualIdent         <- Identifier ('.' Identifier)*
+     Primary           <- '-' Primary
+                        / Number
                         / StringLiteral
-                        / Identifier
+                        / QualIdent
                         / '(' Expression ')'
 
-# KERNAL and Memory Access
-%SYS: A built-in object for accessing system-level resources, including the KERNAL and Clock.
+# Standard Libraries for System-level resources
 
-     %SYS.R0 - %SYS.R15: Access to the 16 pseudo-registers as UINT16.
-     %SYS.R0L, %SYS.R0H - %SYS.R15L, %SYS.R15H: Access to the low and high bytes of the pseudo-registers as UINT8.
-     %SYS.poke(address, value): Writes a UINT8 to memory. Supports a list of values for sequential writes.
-     %SYS.peek(address): Reads a UINT8 from memory.
-     %SYS.A, %SYS.X, %SYS.Y, %SYS.P: Read-only access to the CPU registers.
-     %SYS.CHROUT(c)
-     %SYS.CLK
+* SYS: kernal calls e.g. SYS.CHROUT(c);  Also, clock access e.g. SYS.CLK.
+* REG: read and write the 16 pseudo-register words, also by Low and High bytes.  Also read access to CPU regs.
+* MEM: peek values, and poke one or a list of values.
 
 * Writing to CPU Registers requires the use of inline assembly.
  
@@ -244,7 +283,13 @@ Compiler generates code to handle masking and shifting.
 # Grammar Notes
 
 * Constant expressions are always folded at compile time, including bitwise ops, math, and field offsets.
-* MACRO DIVISION works well with the static model; preprocess these before parsing expressions.
 * Pragmas attach to var-decl or proc-decl. Store these in the AST as a list of symbols and optional values.
-* Procedure overloading is resolved by mangling names based on the parameter types — ASTBuilder will handle this during symbol table construction or codegen.
+* Procedure "overloading" is resolved by mangling names based on the parameter types — ASTBuilder will handle this during symbol table construction or codegen.
 * Inline procs are simply procedure literals, no captures — just wrap in a small ProcLiteralNode with an anonymous name.
+
+* Separate Grammar Files: Each division (Module Header, Metadata, Import, Macro, Memory, Data, Code, Expressions) will have its own .rakumod file (e.g., MyLanguage::Grammar::ModuleHeader.rakumod).
+* Expressions Grammar: A separate Expressions grammar will be created and used by both the Data and Code divisions for parsing expressions.
+* is export: The is export trait will be used extensively in the Expressions grammar to make common expression tokens (e.g., identifier, number, string_literal) available in other grammars without qualification.
+* use ... only (...): This construct will be used to import specific tokens/rules from other division grammars when needed, minimizing namespace pollution.
+* Roles: Roles will be used to define and reuse common grammar fragments that are not tied to a specific division.
+
