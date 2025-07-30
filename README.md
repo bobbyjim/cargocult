@@ -14,10 +14,11 @@ Transpiling gives me shortcuts.  I don't need to implement:
 * resolving cross-module calls
 
 # Language Structure
-* Note: The file passed to the xen16 command is the MAIN module.
-* Divisions: Modular, COBOL‑inspired clarity.
+Note: The file passed to the xen16 command is the MAIN module.
 
-Program           <- ModuleHeader MetadataDiv? ImportDiv? MacroDiv? MemoryDiv? DataDiv? CodeDiv
+Divisions: Modular, COBOL‑inspired clarity.
+
+     Program           <- ModuleHeader MetadataDiv? ImportDiv? MacroDiv? MemoryDiv? DataDiv? CodeDiv
 
 ## Lexicals
 
@@ -98,7 +99,7 @@ Plan: a simple Constant-style text substitution at parse time. Works for constan
      END MACRO DIVISION.
 
 ## Memory Division (Optional)
-* AREAs: First-class in Placement via @Identifier.
+AREAs: First-class in Placement via @Identifier.
 
      MemoryDiv         <- 'MEMORY DIVISION.' MemoryDecl+ 'END MEMORY DIVISION.'
      MemoryDecl        <- 'AREA' Identifier StorageSpec SizeSpec ';'
@@ -109,17 +110,21 @@ Plan: a simple Constant-style text substitution at parse time. Works for constan
      Address           <- HexLiteral
 
 ## Data Division (Optional)
-* A Data Division may contain at most one Working‑Storage Section, one Enum Section, and one Assertion Section.
-* Slices: Can reference an existing array directly with SLICE[myArray, 10..20].
-* Enums: Simple, no explicit values, UINT8-backed starting at zero.
-* Assertions: Compile‑time invariants. Like guardrails in the source, enforced before code generation. If the assertion fails, compilation halts with an error. No runtime code is generated for assertions.
+A Data Division may contain at most one Working‑Storage Section, one Enum Section, and one Assertion Section.
+
+Slices: Can reference an existing array directly with SLICE[myArray, 10..20].
+
+Enums: Simple, no explicit values, UINT8-backed starting at zero.
+
+Assertions: Compile‑time invariants. Like guardrails in the source, enforced before code generation. If the assertion fails, compilation halts with an error. No runtime code is generated for assertions.
+
 
      ASSERT SECTION.
          ASSERT SIZEOF(MyRecord) <= 32;
          ASSERT MAX_PLAYERS <= 8;
      END ASSERT SECTION.
 
-WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
+WORKING-STORAGE SECTION. Contains variable and type declarations.
 
      DataDiv           <- 'DATA DIVISION.' DataSection* 'END DATA DIVISION.'
      DataSection       <- WorkingStorageSection? EnumSection? AssertionSection?
@@ -141,15 +146,19 @@ WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
      RecordField       <- Identifier ':' TypeSpec ';'
       
 
+ENUM Section. Contains enum declarations.
+
      EnumSection        <- 'ENUM SECTION.' EnumDecl+ 'END ENUM SECTION.'
      EnumDecl           <- Identifier ':' EnumMemberList ';'
      EnumMemberList     <- Identifier (',' Identifier)*
+
+ASSERT Section. Contains assertions.
 
      AssertionSection   <- 'ASSERT SECTION.' AssertDecl+ 'END ASSERT SECTION.'
      AssertDecl         <- 'ASSERT' Expression ';'
 
 ## Code Division (Optional)
-* Statements: Structured and Oberon-like, but adapted to Xenober16’s flavor.
+Statements: Structured and Oberon-like, but adapted to Xenober16’s flavor.
 
      CASE key OF
          'A'..'Z': SAY "letter";
@@ -157,6 +166,8 @@ WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
      ELSE
          SAY "other";
      END CASE;
+
+Grammar:
 
      CodeDiv           <- 'CODE DIVISION.' ProcDecl+ 'END CODE DIVISION.'
      ProcDecl          <- Pragma* 'PROC' Identifier '(' ParamList? ')' ';' 
@@ -204,18 +215,18 @@ WORKING-STORAGE SECTION. (Mandatory): Contains variable and type declarations.
                         / '(' Expression ')'
 
 # KERNAL and Memory Access
+%SYS: A built-in object for accessing system-level resources, including the KERNAL and Clock.
 
-* %SYS Object: A built-in object for accessing system-level resources.
-* %SYS.R0 - %SYS.R15: Access to the 16 pseudo-registers.
-* %SYS.R0L, %SYS.R0H - %SYS.R15L, %SYS.R15H: Access to the low and high bytes of the pseudo-registers.
-* %SYS.poke(address, value): Writes a byte to memory. Supports a list of values for sequential writes.
-* %SYS.peek(address): Reads a byte from memory.
-* %SYS.A, %SYS.X, %SYS.Y, %SYS.P: Read-only access to the CPU registers.
+     %SYS.R0 - %SYS.R15: Access to the 16 pseudo-registers as UINT16.
+     %SYS.R0L, %SYS.R0H - %SYS.R15L, %SYS.R15H: Access to the low and high bytes of the pseudo-registers as UINT8.
+     %SYS.poke(address, value): Writes a UINT8 to memory. Supports a list of values for sequential writes.
+     %SYS.peek(address): Reads a UINT8 from memory.
+     %SYS.A, %SYS.X, %SYS.Y, %SYS.P: Read-only access to the CPU registers.
+     %SYS.CHROUT(c)
+     %SYS.CLK
 
-* Writing to CPU Registers: Requires the use of inline assembly.
-
-* %SYS Object (Extended): May include access to the KERNAL (e.g., %SYS.chrout()) and system (e.g., %SYS.clock).
-
+* Writing to CPU Registers requires the use of inline assembly.
+ 
 # Bitfields
 
 * Defined using the @BITFIELD(width) annotation within records.
@@ -229,12 +240,6 @@ The compiler infers the underlying type based on the width:
      @BITFIELD(9) - @BITFIELD(15): Uses two bytes
 
 Compiler generates code to handle masking and shifting.
-
-# Trailing IF
-
-* Trailing IF conditions some statements.
-* LAST [IF <expr>];
-* SAY <expr> [IF <expr>];
 
 # Grammar Notes
 
