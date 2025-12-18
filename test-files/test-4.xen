@@ -1,0 +1,34 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. LoopTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests WHILE and REPEAT/UNTIL loops.
+
+DATA DIVISION.
+    counter: uint8;
+    total: uint8;
+
+MAIN DIVISION.
+    counter := 50;
+    
+    SAY "Counting down from 50 to 20";
+    WHILE counter > 20 DO
+        counter := counter - 5;
+        SAY counter;
+    END
+    
+    SAY "Counting up to 30";
+    REPEAT
+        counter := counter + 1;
+        SAY counter;
+    UNTIL counter >= 30;
+    
+    total := 0;
+    counter := 1;
+    SAY "Sum of 1 to 10";
+    WHILE counter <= 10 DO
+        total := total + counter;
+        counter := counter + 1;
+    END
+    SAY total;
+
+MODULE END.

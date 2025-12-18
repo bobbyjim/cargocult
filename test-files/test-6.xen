@@ -1,0 +1,41 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ProcedureTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests procedure definitions and calls with parameters.
+
+DATA DIVISION.
+    result: uint8;
+    x: uint8;
+    y: uint8;
+
+PROCEDURE DIVISION.
+    PROC greet(name: uint8)
+        SAY "Hello";
+        SAY name;
+    END
+    
+    PROC add(a: uint8, b: uint8)
+        result := a + b;
+        SAY result;
+    END
+    
+    PROC multiply(a: uint8, b: uint8)
+        result := a * b;
+        SAY result;
+    END
+
+MAIN DIVISION.
+    x := 10;
+    y := 5;
+    
+    greet(42);
+    
+    SAY "Addition test";
+    add(x, y);
+    
+    SAY "Multiplication test";
+    multiply(x, y);
+    
+    add(100, 50);
+
+MODULE END.

@@ -1,0 +1,487 @@
+unit class Xenober16::ASTBuilder;
+
+# TOP level - builds the complete program AST
+	method TOP($/) {
+		make {
+			type           => 'Program',
+			identification => $<program-identification-division>.made,
+			imports        => $<import-division> ?? $<import-division>.made !! [],
+			constants      => $<constants-division> ?? $<constants-division>.made !! [],
+			memory         => $<memory-division> ?? $<memory-division>.made !! [],
+			macros         => $<macro-division> ?? $<macro-division>.made !! [],
+			data           => $<data-division> ?? $<data-division>.made !! [],
+			procedures     => $<procedure-division> ?? $<procedure-division>.made !! [],
+			main           => $<main-division> ?? $<main-division>.made !! [],
+		};
+	}
+
+	# IDENTIFICATION DIVISION
+	method program-identification-division($/) {
+		make {
+			type        => 'Identification',
+			module-id   => $<module-id>.made,
+			author      => $<author> ?? $<author>.made !! Nil,
+			description => $<description> ?? $<description>.made !! Nil,
+			purpose     => $<purpose> ?? $<purpose>.made !! Nil,
+		};
+	}
+
+	method module-id($/) {
+		make ~$<identifier>;
+	}
+
+	method author($/) {
+		make ~$<identifier>;
+	}
+
+	method description($/) {
+		make ~$<rest-of-line>;
+	}
+
+	method purpose($/) {
+		make ~$<rest-of-line>;
+	}
+
+	# IMPORT DIVISION
+	method import-division($/) {
+		make $<use>».made;
+	}
+
+	method use($/) {
+		make {
+			type => 'Import',
+			name => ~$<identifier>,
+		};
+	}
+
+	# CONSTANTS DIVISION
+	method constants-division($/) {
+		make $<constant-declaration>».made;
+	}
+
+	method constant-declaration($/) {
+		make {
+			type  => 'Constant',
+			name  => ~$<identifier>,
+			vtype => ~$<type>,
+			value => $<constant-value>.made,
+		};
+	}
+
+	method constant-value($/) {
+		if $<number> {
+			make $<number>.made;
+		} elsif $<string> {
+			make $<string>.made;
+		}
+	}
+
+	# MEMORY DIVISION
+	method memory-division($/) {
+		make $<area>».made;
+	}
+
+	method area($/) {
+		my $area-type = $<ram-area> ?? 'RAM' !! 'BANK';
+		my $area-data = $<ram-area> ?? $<ram-area>.made !! $<bank-area>.made;
+		
+		make {
+			type      => 'MemoryArea',
+			name      => ~$<identifier>,
+			area-type => $area-type,
+			%$area-data,
+			size      => $<number>.made,
+		};
+	}
+
+	method ram-area($/) {
+		make {
+			address => $<number>.made,
+		};
+	}
+
+	method bank-area($/) {
+		my @numbers = $<number>».made;
+		make {
+			bank    => @numbers[0],
+			address => @numbers[1],
+		};
+	}
+
+	# MACRO DIVISION
+	method macro-division($/) {
+		make $<macro-declaration>».made;
+	}
+
+	method macro-declaration($/) {
+		make {
+			type       => 'Macro',
+			name       => ~$<identifier>,
+			macro-type => ~$<macro-type>,
+			value      => $<simple-expression>.made,
+		};
+	}
+
+	# DATA DIVISION
+	method data-division($/) {
+		make $<variable-declaration>».made;
+	}
+
+	method variable-declaration($/) {
+		make {
+			type  => 'Variable',
+			name  => ~$<identifier>,
+			vtype => ~$<type>,
+			area  => $<area-annotation> ?? $<area-annotation>.made !! Nil,
+		};
+	}
+
+	method area-annotation($/) {
+		make ~$<identifier>;
+	}
+
+	# PROCEDURE DIVISION
+	method procedure-division($/) {
+		make $<procedure>».made;
+	}
+
+	method procedure($/) {
+		make {
+			type       => 'Procedure',
+			name       => ~$<identifier>,
+			parameters => $<parameter-list> ?? $<parameter-list>.made !! [],
+			body       => $<statement>».made,
+		};
+	}
+
+	method parameter-list($/) {
+		make $<parameter>».made;
+	}
+
+	method parameter($/) {
+		make {
+			name => ~$<identifier>,
+			type => ~$<type>,
+		};
+	}
+
+	# MAIN DIVISION
+	method main-division($/) {
+		make $<statement>».made;
+	}
+
+	# STATEMENTS
+	method statement($/) {
+		if $<assignment> {
+			make $<assignment>.made;
+		} elsif $<say> {
+			make $<say>.made;
+		} elsif $<echo> {
+			make $<echo>.made;
+		} elsif $<if-statement> {
+			make $<if-statement>.made;
+		} elsif $<while-loop> {
+			make $<while-loop>.made;
+		} elsif $<repeat-loop> {
+			make $<repeat-loop>.made;
+		} elsif $<case-statement> {
+			make $<case-statement>.made;
+		} elsif $<procedure-call> {
+			make $<procedure-call>.made;
+		}
+	}
+
+	method assignment($/) {
+		make {
+			type       => 'Assignment',
+			target     => $<qualident>.made,
+			expression => $<expression>.made,
+		};
+	}
+
+	method say($/) {
+		make {
+			type       => 'Say',
+			expression => $<simple-expression>.made,
+		};
+	}
+
+	method echo($/) {
+		make {
+			type       => 'Echo',
+			expression => $<simple-expression>.made,
+		};
+	}
+
+	method if-statement($/) {
+		# Get the main THEN branch statements
+		my @then-statements = $<statement>».made;
+		
+		# Build elsif branches
+		my @elsif-branches = [];
+		if $/ {
+			for @($/) -> $elsif-group {
+				# Each $elsif-group is a capture from the ( <ELSIF> ... )* group
+				if $elsif-group && $elsif-group<ELSIF> {
+					my $elsif-expr = $elsif-group<expression>.made;
+					my @elsif-stmts = $elsif-group<statement>».made;
+					@elsif-branches.push({
+						condition => $elsif-expr,
+						body => @elsif-stmts,
+					});
+				}
+			}
+		}
+		
+		# Get else branch
+		my @else-statements = [];
+		if $/ {
+			for @($/) -> $else-group {
+				if $else-group && $else-group<ELSE> {
+					@else-statements = $else-group<statement>».made;
+					last;
+				}
+			}
+		}
+		
+		make {
+			type           => 'If',
+			condition      => $<expression>[0].made,  # First expression is the IF condition
+			then-branch    => @then-statements,
+			elsif-branches => @elsif-branches,
+			else-branch    => @else-statements.elems > 0 ?? @else-statements !! Nil,
+		};
+	}
+
+	method while-loop($/) {
+		make {
+			type      => 'While',
+			condition => $<expression>.made,
+			body      => $<statement>».made,
+		};
+	}
+
+	method repeat-loop($/) {
+		make {
+			type      => 'Repeat',
+			body      => $<statement>».made,
+			condition => $<expression>.made,
+		};
+	}
+
+	method case-statement($/) {
+		make {
+			type      => 'Case',
+			value     => $<comparison>.made,
+			branches  => $<case-when>».made,
+			else      => $<statement> ?? $<statement>».made !! [],
+		};
+	}
+
+	method case-when($/) {
+		make {
+			selectors  => $<case-selector>».made,
+			statements => $<statement>».made,
+		};
+	}
+
+	method case-selector($/) {
+		if $<range> {
+			make $<range>.made;
+		} elsif $<number> {
+			make { type => 'Number', value => $<number>.made };
+		} elsif $<qualident> {
+			make $<qualident>.made;
+		}
+	}
+
+	method procedure-call($/) {
+		make {
+			type      => 'Call',
+			name      => ~$<identifier>,
+			arguments => $<argument-list> ?? $<argument-list>.made !! [],
+		};
+	}
+
+	method argument-list($/) {
+		make $<expression>».made;
+	}
+
+	# EXPRESSIONS
+	method expression($/) {
+		if $<string> {
+			make $<string>.made;
+		} elsif $<comparison> {
+			make $<comparison>.made;
+		}
+	}
+
+	method comparison($/) {
+		# First sum is direct capture
+		my @sums = ($<sum>.made,);
+		my @operators = ();
+		
+		# Additional sums and operators are in the repetition groups
+		for @($/) -> $group {
+			if $group && $group<sum> {
+				@operators.push(~$group<compare-operator>);
+				@sums.push($group<sum>.made);
+			}
+		}
+		
+		if @sums.elems == 1 {
+			make @sums[0];
+		} else {
+			# Has comparison operators - comparisons don't chain like arithmetic
+			make {
+				type => 'BinaryOp',
+				op   => @operators[0],
+				left => @sums[0],
+				right => @sums[1],
+			};
+		}
+	}
+
+	method sum($/) {
+		# First product is direct capture
+		my @products = ($<product>.made,);
+		my @operators = ();
+		
+		# Additional products and operators are in the repetition groups
+		for @($/) -> $group {
+			if $group && $group<product> {
+				@operators.push(~$group[0]);  # The operator <[+-]>
+				@products.push($group<product>.made);
+			}
+		}
+		
+		if @products.elems == 1 {
+			make @products[0];
+		} else {
+			# Build left-associative binary operations
+			my $result = @products[0];
+			for 1..^@products.elems -> $i {
+				$result = {
+					type => 'BinaryOp',
+					op   => @operators[$i - 1],
+					left => $result,
+					right => @products[$i],
+				};
+			}
+			make $result;
+		}
+	}
+
+	method product($/) {
+		# First factor is direct capture
+		my @factors = ($<factor>.made,);
+		my @operators = ();
+		
+		# Additional factors and operators are in the repetition groups
+		for @($/) -> $group {
+			if $group && $group<factor> {
+				@operators.push(~$group[0]);  # The operator <[*/]>
+				@factors.push($group<factor>.made);
+			}
+		}
+		
+		if @factors.elems == 1 {
+			make @factors[0];
+		} else {
+			# Build left-associative binary operations
+			my $result = @factors[0];
+			for 1..^@factors.elems -> $i {
+				$result = {
+					type => 'BinaryOp',
+					op   => @operators[$i - 1],
+					left => $result,
+					right => @factors[$i],
+				};
+			}
+			make $result;
+		}
+	}
+
+	method factor($/) {
+		if $<number> {
+			make $<number>.made;
+		} elsif $<string> {
+			make $<string>.made;
+		} elsif $<qualident> {
+			make $<qualident>.made;
+		} elsif $<expression> {
+			make $<expression>.made;  # Parenthesized expression
+		}
+	}
+
+	method simple-expression($/) {
+		if $<string> {
+			make $<string>.made;
+		} elsif $<qualident> {
+			make $<qualident>.made;
+		} elsif $<number> {
+			make $<number>.made;
+		}
+	}
+
+	method qualident($/) {
+		make {
+			type => 'Identifier',
+			name => ~$<identifier>,
+		};
+	}
+
+	method identifier($/) {
+		make ~$/;
+	}
+
+	# LITERALS
+	method number($/) {
+		if $<hex-number> {
+			make $<hex-number>.made;
+		} elsif $<dec-number> {
+			make $<dec-number>.made;
+		}
+	}
+
+	method hex-number($/) {
+		# Remove the leading '$' and get the hex digits
+		my $hex-str = (~$/).subst(/^\$/, '');
+		make {
+			type  => 'Number',
+			value => :16($hex-str),
+			radix => 16,
+		};
+	}
+
+	method dec-number($/) {
+		make {
+			type  => 'Number',
+			value => +~$/,
+			radix => 10,
+		};
+	}
+
+	method string($/) {
+		# Remove quotes from the string
+		my Str $str = ~$/;
+		$str .= subst(/^\"/, '');
+		$str .= subst(/\"$/, '');
+		make {
+			type  => 'String',
+			value => $str,
+		};
+	}
+
+	method range($/) {
+		my @numbers = $<number>».made;
+		make {
+			type  => 'Range',
+			start => @numbers[0],
+			end   => @numbers[1],
+		};
+	}
+
+	method rest-of-line($/) {
+		make ~$/;
+	}

@@ -1,0 +1,23 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. MemoryTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests MEMORY DIVISION with AREA declarations.
+
+MEMORY DIVISION.
+    AREA lowram RAM($0400) SIZE 1024;
+    AREA hiram BANK(1, $a000) SIZE 8192;
+    AREA vera-data BANK(0, $9f00) SIZE 256;
+
+DATA DIVISION.
+    buffer-ptr: uint16;
+    data-byte: uint8;
+
+MAIN DIVISION.
+    SAY "Memory areas defined";
+    buffer-ptr := $0400;
+    SAY buffer-ptr;
+    
+    data-byte := 42;
+    SAY data-byte;
+
+MODULE END.

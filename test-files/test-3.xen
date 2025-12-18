@@ -1,0 +1,36 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ConditionalTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests IF/THEN/ELSIF/ELSE conditionals and comparisons.
+
+DATA DIVISION.
+    value: uint8;
+    score: uint8;
+
+MAIN DIVISION.
+    value := $65;
+    value := value + 5;
+    SAY value;
+    
+    IF value > 100 THEN
+        SAY "greater than 100";
+    ELSIF value > 60 THEN
+        SAY "greater than 60";
+    ELSIF value > 50 THEN
+        SAY "greater than 50";
+    ELSE
+        SAY "less than 51";
+    END
+    
+    score := 85;
+    IF score >= 90 THEN
+        SAY "Grade A";
+    ELSIF score >= 80 THEN
+        SAY "Grade B";
+    ELSIF score >= 70 THEN
+        SAY "Grade C";
+    ELSE
+        SAY "Grade F";
+    END
+
+MODULE END.

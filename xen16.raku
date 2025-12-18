@@ -4,18 +4,18 @@
 # optional: dumps AST
 # optional: responds to module flags such as DEBUG.
 
-use Xenober16::Parser; # these classes should be in ./lib/Xenober16/
+use Xenober16::Grammar; # these classes should be in ./lib/Xenober16/
 use Xenober16::ASTBuilder;
 use Xenober16::Interpreter;
 
-sub MAIN(Str $file, Bool :$debug = False) {
+sub MAIN(Str $file, Bool :$debug = False, Bool :$no-run = False) {
 
-	my $parser = Xenober16::Parser;
+	my $parser = Xenober16::Grammar;
 	my $astBuilder = Xenober16::ASTBuilder.new;
 
 	my $text = slurp $file;
 
-	my $result = $parser.parse($text, :actions($astBuilder), :trace($debug));
+	my $result = $parser.parse($text, :actions($astBuilder));
 
 	unless $result {
 		say "\n[❌ Parser failed to parse the file: $file]";
@@ -25,12 +25,20 @@ sub MAIN(Str $file, Bool :$debug = False) {
 	my $ast = $result.made;
 	unless $ast {
 		say "\n[❌ AST Build failed]";
+		say "Parse result exists but .made returned: ", $ast.perl;
 		exit 1;
 	}
-    $ast.dump if $debug;
 
 	say "\n\e[32m[✅ AST Build successful.]\e[0m\n";
-	my $interpreter = Xenober16::Interpreter.new;
- 	$interpreter.run($ast);
+	
+	if $debug {
+		say $ast.perl;
+	}
+
+	unless $no-run {
+		my $interpreter = Xenober16::Interpreter.new;
+		$interpreter.run($ast);
+	}
+	
 	exit 0;
 }

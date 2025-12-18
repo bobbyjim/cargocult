@@ -1,0 +1,248 @@
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C  
+C       CCCCC   OOOOO  BBBBB    OOOOO  LL      IIIII UU   UU MM    MM 
+C      CC    C OO   OO BB   B  OO   OO LL       III  UU   UU MMM  MMM 
+C      CC      OO   OO BBBBBB  OO   OO LL       III  UU   UU MM MM MM 
+C      CC    C OO   OO BB   BB OO   OO LL       III  UU   UU MM    MM 
+C       CCCCC   OOOO0  BBBBBB   OOOO0  LLLLLLL IIIII  UUUUU  MM    MM 
+C      
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+C
+C
+C COBOLIUM is a ritualistic, esoteric Vilani programming language 
+C designed to manipulate cosmic forces and temporal anomalies 
+C through cryptic and highly abstract syntax.
+C 
+C Key Concepts:
+C 
+C Ritualistic Execution: 
+C  COBOLIUM code represents a series of ritualistic invocations 
+C  to alter the fabric of reality. Each statement is a kind of arcane spell.
+C 
+C Hierarchical Social Structure: 
+C  Every coder has a social status, which influences how they 
+C  interact with the language’s syntax and available keywords.
+C 
+C Ethereal Memory Management: 
+C  Memory isn’t just allocated—it’s summoned and recalled as part of 
+C  an ongoing mystical operation.
+C 
+C Adaptation: 
+C  Cobolium can mutate over time, adapting to environmental conditions or shifts
+C  in the system's energetic state. This reflects the self-adapting nature of the
+C  language, with the code sometimes modifying itself as the system evolves.
+C
+C
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+
+
+GRAFT HERE: FUEL_REPAIR_ROUTINE IF FUEL IS BELOW 50% AND SYSTEM IS IN CRITICAL STATE.
+IGNORE LIFE_SUPPORT WHEN FUEL IS DEPLETED.
+GRAFT HERE: SYSTEM_MAINTENANCE_ROUTINE EVERY 1000 CYCLES.
+ALLOCATE POWER UNTIL COSMIC_FLARE.
+ADAPT: PASSENGER_LIST FEEDING ROUTINE AS NEEDED TO MAXIMIZE PROFIT.
+ADD_TO_LIBRARY: FUEL_REPAIR_ROUTINE.
+INVOKE LIBRARY ROUTINE FUEL_REPAIR_ROUTINE.
+GRAFT HERE: EMERGENCY_EVASION_ROUTINE UNDER BLACK_HOLE INFLUENCE.
+IGNORE GAINFUL_OPPORTUNITY WHEN RESOURCES ARE AT MAX.
+
+
+C
+C   Generate a course to the destination.
+C
+*GENERA
+        RECALL MEMORY BLOCK STARMAP.
+
+        ALLOCATE MEMORY BLOCK DESTINATION 
+            AS UNKNOWN OF SIZE 256 UNITS
+            IN THE ASTROGATION MODULE.
+
+        ALLOCATE MEMORY BLOCK COURSELINE 
+            AS UNKNOWN OF SIZE 256 UNITS
+            IN THE ASTROGATION MODULE.
+
+<       DESTINATION.
+
+H Override #4RS# for jumping too close to a star.
+        PLOT COURSELINE TO DESTINATION USING STARMAP.
+:
+
+
+X SECRET OR EMERGENCY CODE: REACTOR SHUTDOWN REQUIRED. ACCESS CODE REQUIRED.
+S       REACTOR_EMERGENCY
+        WAIT UNTIL PRESSURE_EQUALIZED.
+        GRAFT HERE: RESET_REACTOR.
+:
+
+L Library Data: Only the Ancients knew how to stabilize a collapsing star.
+L Their knowledge is embedded in their core systems.
+S       STABILIZE_STAR_CORE
+        WAIT UNTIL STABILIZATION_COMPLETE.
+        GRAFT HERE: INITIATE_CORE_CONVERGENCE.
+:
+
+H HIDDEN CODE SEQUENCE #9081 REQUIRED TO ENABLE OVERDRIVE MODE.
+S       OVERDRIVE_MODE
+        WAIT UNTIL REACTOR_READY.
+        GRAFT HERE: ENABLE_OVERDRIVE.
+:
+
+C
+C SYSTEM: ENERGY RESERVES CRITICAL.
+C
+S       ENERGY_REBALANCE
+        WAIT UNTIL PRIMARY_ENERGY_CORRECTED.
+H       CODE SEQUENCE #RSD# TO ENABLE SIGNAL_CLOAKING.
+        GRAFT HERE: RESET_ENERGY_FLOW.
+:
+
+C
+C Routine: Hello, World!
+C
+S       HELLO_WORLD
+        DIRECT 1.
+<       HELLO, WORLD!
+:
+
+C
+C Routine: Gather Citizen Data
+C
+S       GATHER_CITIZEN_DATA
+        ALLOCATE MEMORY BLOCK NAME AS STRING.
+        ALLOCATE MEMORY BLOCK ID AS STRING.
+        DIRECT AND INDIRECT 1.
+<       WHAT IS YOUR NAME?
+>       NAME
+<       WHAT IS YOUR ID?
+>       ID
+<       THANK YOU, CITIZEN.
+        DIRECT 0.
+<       NAME, ID.
+:
+
+C
+C Routine: Core System Diagnostic
+C
+S       CORE_DIAGNOSTIC_ROUTINE
+        ALLOCATE MEMORY SPACE FOR CHECKSUM.
+        EXECUTE SYSTEM_STATUS_ANALYSIS.
+        IF SYSTEM IS UNDERSTRESS \
+            THEN INITIATE RECOVERY PROTOCOL.
+        ADAPT CORE_DIAGNOSTIC_ROUTINE 
+            TO INCORPORATE NEW READINGS.
+::
+
+C
+C Elite: Fuel Allocation for Emergency Evacuation
+C
+S       FUEL_ALLOCATION_ROUTINE
+        ALLOCATE FUEL UNDER SOLAR_FLARE.
+        GRAFT HERE: FUEL_ALLOCATION_ROUTINE 
+            IF FUEL IS BELOW 50%.
+        ADAPT FUEL_ALLOCATION_ROUTINE 
+            TO IMPROVE EFFICIENCY WHEN FUEL IS BELOW 25%.
+:
+
+
+C
+C Shipboard Fuel Allocation _ **COBOLIUM** Version One
+C
+*FALLOC
+        ALLOCATE MEMORY BLOCK FUEL_RESERVOIR 
+            AS NUMERIC OF SIZE 2048 UNITS 
+            BETWEEN THE SYSTEMS OF THE CORE AND THE REACTOR.
+
+        ALLOCATE MEMORY BLOCK FUEL_TRANSPORTER 
+            AS NUMERIC OF SIZE 1024 UNITS 
+            UPON THE APPROACH OF AN INTERGALACTIC BODY.
+
+        BEGIN.
+            IF FUEL_RESERVOIR IS NEAR EMPTY 
+                AND GRAVITY IS INFLUENCED BY A STAR’S MASS THEN
+                ALLOCATE FUEL FROM MEMORY BLOCK FUEL_TRANSPORTER 
+                IN DIRECTIONS THAT ALIGN WITH THE PREDICTED ORBIT.
+            ENDIF.
+
+            PLEASE DISTRIBUTE FUEL TO MAIN ENGINES 
+                OF SIZE 512 UNITS FOR A PERIOD OF 3.5 HOURS 
+                UNTIL THE NEXT SOLAR FLARE.
+     
+            AUDIT MEMORY BLOCK FUEL_RESERVOIR 
+                FOR STABILITY ON THE EDGE OF THE EVENT HORIZON.
+
+            IF FUEL_RESERVOIR IS IN A CRITICAL STATE THEN
+                RELEASE FUEL_RESERVOIR TO THE VOID OF SPACE 
+                UNTIL WE REMAIN IN THE LIGHT OF A STAR.
+            ENDIF.
+        END.
+:
+
+C
+C Crew Allocation and Duty Assignment
+C Note the somewhat passive aggressive nature of this prototype.
+C
+*CDALLO
+        ALLOCATE MEMORY BLOCK CREW_QUARTERS 
+            AS STRING OF SIZE 512 UNITS
+            IN THE NAVIGATION AREA OF THE SHIP.
+
+        ALLOCATE MEMORY BLOCK CREW_FOCUS 
+            AS UNKNOWN OF SIZE 128 UNITS 
+            UNDER THE GUIDANCE OF A GALACTIC ALIGNMENT.
+
+        BEGIN.
+            IF CREW_QUARTERS IS EMPTY AND THE SHIP IS IN A HIGHLY RESTLESS ORBIT
+            THEN
+                PLEASE ASSIGN CREW MEMBER RYAN TO MAINTAIN ORDER 
+                IN THE QUARTERS UNTIL THE NEXT COMET PASSAGE.
+            ENDIF.
+        
+            IF CREW_FOCUS IS DAMAGED AND THE SHIP’S MORALITY IS QUESTIONED THEN
+                REASSIGN CREW MEMBER TESSA TO MANAGE THE SHIP’S WELL_BEING 
+                WITH A 30% CHANCE OF SUCCESS.
+            ENDIF.
+        
+            AUDIT MEMORY BLOCK CREW_FOCUS FOR DETERIORATION 
+                WITHIN THE INTERNAL SPHERE OF THE SHIP'S SANCTUARY.
+        
+            IF CREW_FOCUS REMAINS UNSTABLE THEN
+                RELEASE CREW_MEMBER TESSA TO THE VOID UNTIL THE NEXT ECLIPSE.
+            ENDIF.
+        END.
+:
+
+C
+C Life Support System Management
+C Note the oddly ethereal bent of this prototype.  Makes you wonder what the Vilani 
+C were really capable of, and how much of it was euphemism for some sort of harsh pragmatism.
+C
+*LSSM
+        ALLOCATE MEMORY BLOCK AIR_RECYCLER 
+            AS STRING OF SIZE 1024 UNITS 
+            IN THE HEART OF THE SHIP.
+
+        ALLOCATE MEMORY BLOCK WATER_RESERVOIR 
+            AS NUMERIC OF SIZE 512 UNITS 
+            WITHIN THE BOWELS OF THE SHIP'S KITCHEN.
+
+        BEGIN
+            IF OXYGEN_LEVELS ARE BELOW 20% AND THE SHIP'S CREW SPIRITUALITY IS IN DEBT TO THE VOID
+            THEN
+                PLEASE DIVERT 50% OF WATER_RESERVOIR TO AIR_RECYCLER
+                    STABILIZING BOTH H2O AND OXYGEN IN ONE SACRED CYCLE.
+            ENDIF.
+
+            IF LIFE_SUPPORT IS IN DANGER OF BREACHING THE RING OF THE COSMOS THEN
+                PLEASE CHANNEL ALL LIFE SUPPORT TO THE CREW’S MINDS
+                   CONVERTING THEIR ESSENCE TO STAY ALIVE.
+            ENDIF.
+
+            AUDIT MEMORY BLOCK WATER_RESERVOIR  
+                FOR TENSIONS WITHIN THE SHIP'S BOUNDARIES.
+
+            IF WATER_RESERVOIR DEVIATES FROM EXPECTED MOLECULAR CONFIGURATION THEN
+                FORGET WATER_RESERVOIR  
+                    UNTIL IT IS READY TO CONSUME THE NEXT STARBORN SALT.
+            ENDIF.
+        END.
+:

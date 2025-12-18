@@ -1,0 +1,389 @@
+unit class Xenober16::Interpreter;
+
+# Symbol table for variables and constants
+has %!variables;
+has %!constants;
+has %!procedures;
+has %!memory-areas;
+
+# Exception for early procedure return
+class ProcReturn is Exception {
+    has $.value;
+}
+
+method run($ast) {
+    say "[🔎 Starting interpretation]";
+    
+    # Process all divisions
+    self!process-identification($ast<identification>);
+    self!process-imports($ast<imports>);
+    self!process-constants($ast<constants>);
+    self!process-memory($ast<memory>);
+    self!process-data($ast<data>);
+    self!process-procedures($ast<procedures>);
+    
+    # Execute main division
+    self!execute-statements($ast<main>);
+    
+    say "[✅ Program executed successfully]";
+}
+
+# Process identification division (metadata only, no execution)
+method !process-identification($ident) {
+    if $ident {
+        say "[📋 Module: {$ident<module-id>}]";
+        say "[👤 Author: {$ident<author>}]" if $ident<author>;
+        say "[📝 Description: {$ident<description>}]" if $ident<description>;
+    }
+}
+
+# Process import division
+method !process-imports($imports) {
+    for @$imports -> $import {
+        say "[📦 Import: {$import<module>}]";
+        # TODO: Actual module loading would go here
+    }
+}
+
+# Process constants division
+method !process-constants($constants) {
+    for @$constants -> $const {
+        my $name = $const<name>;
+        my $value = self!eval-constant-value($const<value>);
+        %!constants{$name} = $value;
+        say "[🔒 Constant: $name = $value]";
+    }
+}
+
+# Process memory division
+method !process-memory($memory) {
+    for @$memory -> $area {
+        my $name = $area<name>;
+        my $location = $area<location>;
+        my $size = $area<size>;
+        %!memory-areas{$name} = {
+            location => $location,
+            size => $size,
+            type => $area<area-type>
+        };
+        say "[🗂️  Memory area: $name at $location, size $size]";
+    }
+}
+
+# Process data division (variable declarations)
+method !process-data($data) {
+    for @$data -> $var {
+        my $name = $var<name>;
+        my $type = $var<vtype>;
+        my $area = $var<area>;
+        
+        # Initialize variable with default value based on type
+        %!variables{$name} = {
+            type => $type,
+            area => $area,
+            value => self!default-value($type)
+        };
+        say "[📊 Variable: $name : $type" ~ ($area ?? " in $area" !! "") ~ "]";
+    }
+}
+
+# Process procedure division
+method !process-procedures($procedures) {
+    for @$procedures -> $proc {
+        my $name = $proc<name>;
+        %!procedures{$name} = $proc;
+        say "[⚙️  Procedure: $name]";
+    }
+}
+
+# Get default value for a type
+method !default-value($type) {
+    given $type {
+        when 'uint8' | 'uint16' | 'int8' | 'int16' { 0 }
+        when 'string' { '' }
+        default { 0 }
+    }
+}
+
+# Evaluate constant value
+method !eval-constant-value($value) {
+    given $value<type> {
+        when 'Number' { $value<value> }
+        when 'String' { $value<value> }
+        when 'HexNumber' { :16($value<value>) }
+        default { $value<value> }
+    }
+}
+
+# Execute a list of statements
+method !execute-statements(@statements) {
+    for @statements -> $stmt {
+        self!execute-statement($stmt);
+    }
+}
+
+# Execute a single statement
+method !execute-statement($stmt) {
+    given $stmt<type> {
+        when 'Assignment' {
+            self!execute-assignment($stmt);
+        }
+        when 'Say' {
+            self!execute-say($stmt);
+        }
+        when 'Echo' {
+            self!execute-echo($stmt);
+        }
+        when 'If' {
+            self!execute-if($stmt);
+        }
+        when 'While' {
+            self!execute-while($stmt);
+        }
+        when 'Repeat' {
+            self!execute-repeat($stmt);
+        }
+        when 'Case' {
+            self!execute-case($stmt);
+        }
+        when 'ProcedureCall' {
+            self!execute-procedure-call($stmt);
+        }
+        default {
+            die "Unknown statement type: {$stmt<type>}";
+        }
+    }
+}
+
+# Execute assignment
+method !execute-assignment($stmt) {
+    my $target = $stmt<target><name>;
+    
+    # Check if variable exists
+    unless %!variables{$target}:exists {
+        die "Undefined variable: $target";
+    }
+    
+    my $value = self!eval-expression($stmt<expression>);
+    %!variables{$target}<value> = $value;
+}
+
+# Execute SAY statement
+method !execute-say($stmt) {
+    my $value = self!eval-expression($stmt<expression>);
+    say $value;
+}
+
+# Execute ECHO statement
+method !execute-echo($stmt) {
+    my $value = self!eval-expression($stmt<expression>);
+    print $value;
+}
+
+# Execute IF statement
+method !execute-if($stmt) {
+    my $condition = self!eval-expression($stmt<condition>);
+    
+    if $condition {
+        self!execute-statements($stmt<then-branch>);
+    }
+    elsif $stmt<elsif-branches> {
+        for @($stmt<elsif-branches>) -> $elsif {
+            my $elsif-condition = self!eval-expression($elsif<condition>);
+            if $elsif-condition {
+                self!execute-statements($elsif<body>);
+                return;
+            }
+        }
+        # If no elsif matched, try else
+        if $stmt<else-branch> {
+            self!execute-statements($stmt<else-branch>);
+        }
+    }
+    elsif $stmt<else-branch> {
+        self!execute-statements($stmt<else-branch>);
+    }
+}
+
+# Execute WHILE loop
+method !execute-while($stmt) {
+    while self!eval-expression($stmt<condition>) {
+        self!execute-statements($stmt<body>);
+    }
+}
+
+# Execute REPEAT/UNTIL loop
+method !execute-repeat($stmt) {
+    repeat {
+        self!execute-statements($stmt<body>);
+    } until self!eval-expression($stmt<condition>);
+}
+
+# Execute CASE statement
+method !execute-case($stmt) {
+    my $selector = self!eval-expression($stmt<selector>);
+    
+    for @($stmt<branches>) -> $branch {
+        for @($branch<selectors>) -> $sel {
+            if self!matches-selector($selector, $sel) {
+                self!execute-statements($branch<body>);
+                return;
+            }
+        }
+    }
+    
+    # If no branch matched and there's an else branch
+    if $stmt<else-branch> {
+        self!execute-statements($stmt<else-branch>);
+    }
+}
+
+# Check if value matches a case selector
+method !matches-selector($value, $selector) {
+    given $selector<type> {
+        when 'Number' {
+            return $value == $selector<value>;
+        }
+        when 'String' {
+            return $value eq $selector<value>;
+        }
+        when 'Range' {
+            my $start = $selector<start>;
+            my $end = $selector<end>;
+            return $start <= $value <= $end;
+        }
+        default {
+            return False;
+        }
+    }
+}
+
+# Execute procedure call
+method !execute-procedure-call($stmt) {
+    my $proc-name = $stmt<name>;
+    
+    unless %!procedures{$proc-name}:exists {
+        die "Undefined procedure: $proc-name";
+    }
+    
+    my $proc = %!procedures{$proc-name};
+    
+    # Evaluate arguments
+    my @args;
+    if $stmt<arguments> {
+        @args = $stmt<arguments>.map({ self!eval-expression($_) });
+    }
+    
+    # Save current variable scope
+    my %saved-vars = %!variables.clone;
+    
+    # Bind parameters
+    if $proc<parameters> {
+        for @($proc<parameters>) Z @args -> ($param, $arg) {
+            %!variables{$param<name>} = {
+                type => $param<ptype>,
+                value => $arg
+            };
+        }
+    }
+    
+    # Execute procedure body
+    try {
+        self!execute-statements($proc<body>);
+        CATCH {
+            when ProcReturn {
+                # Restore variables
+                %!variables = %saved-vars;
+                return .value;
+            }
+        }
+    }
+    
+    # Restore variables
+    %!variables = %saved-vars;
+}
+
+# Evaluate an expression
+method !eval-expression($expr) {
+    return Nil unless $expr;
+    
+    # Handle array of expressions (should not happen in proper AST)
+    return Nil if $expr ~~ Array && $expr.elems == 0;
+    
+    given $expr<type> {
+        when 'Number' {
+            return $expr<value>;
+        }
+        when 'HexNumber' {
+            return :16($expr<value>);
+        }
+        when 'String' {
+            return $expr<value>;
+        }
+        when 'Identifier' {
+            my $name = $expr<name>;
+            # Check constants first
+            if %!constants{$name}:exists {
+                return %!constants{$name};
+            }
+            # Then variables
+            if %!variables{$name}:exists {
+                return %!variables{$name}<value>;
+            }
+            die "Undefined identifier: $name";
+        }
+        when 'BinaryOp' {
+            return self!eval-binary-op($expr);
+        }
+        when 'UnaryOp' {
+            return self!eval-unary-op($expr);
+        }
+        when 'ProcedureCall' {
+            return self!execute-procedure-call($expr);
+        }
+        when 'QualifiedIdentifier' {
+            # For now, just treat as identifier
+            return self!eval-expression($expr<identifier>);
+        }
+        default {
+            die "Unknown expression type: {$expr<type>}";
+        }
+    }
+}
+
+# Evaluate binary operation
+method !eval-binary-op($expr) {
+    my $left = self!eval-expression($expr<left>);
+    my $right = self!eval-expression($expr<right>);
+    my $op = $expr<op>;
+    
+    given $op {
+        when '+' { return $left + $right }
+        when '-' { return $left - $right }
+        when '*' { return $left * $right }
+        when '/' { return $left div $right }
+        when 'MOD' { return $left % $right }
+        when 'DIV' { return $left div $right }
+        when '=' { return $left == $right ?? 1 !! 0 }
+        when '<>' { return $left != $right ?? 1 !! 0 }
+        when '<' { return $left < $right ?? 1 !! 0 }
+        when '<=' { return $left <= $right ?? 1 !! 0 }
+        when '>' { return $left > $right ?? 1 !! 0 }
+        when '>=' { return $left >= $right ?? 1 !! 0 }
+        when '&' { return $left ~ $right }
+        default { die "Unknown operator: $op" }
+    }
+}
+
+# Evaluate unary operation
+method !eval-unary-op($expr) {
+    my $operand = self!eval-expression($expr<operand>);
+    my $op = $expr<op>;
+    
+    given $op {
+        when '-' { return -$operand }
+        when '+' { return $operand }
+        when '~' { return !$operand }
+        default { die "Unknown unary operator: $op" }
+    }
+}

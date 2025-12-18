@@ -1,7 +1,7 @@
 # Xenober16
 This is a retro-aesthetic language for transpiling to something like cc65 or Prog8.
 
-It is inspired by Oberon's syntax combined with COBOL's division-based organization. 
+It is inspired by Oberon-07's syntax combined with COBOL's division-based organization. 
 
 The AST is, for all practical purposes, the Intermediate Representation. I only need the AST Intermediate Representation > Code to be structurally and semantically valid.
 

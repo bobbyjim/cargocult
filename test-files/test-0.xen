@@ -1,0 +1,6 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. MinimalTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Minimal valid program - tests basic structure.
+
+MODULE END.

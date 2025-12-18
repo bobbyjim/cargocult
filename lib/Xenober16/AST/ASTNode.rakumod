@@ -1,7 +1,8 @@
-unit role Xenober16::AST::ASTNode;
+unit class Xenober16::AST::ASTNode;
 
-	has Int $.source-line = -1;
+# Base class for all AST nodes
+# All node types inherit from this to support visitor patterns and multi-dispatch
 
-	method node-type { self.WHAT.perl }
-	method line-info { " (line: $.source-line)" }
-
+method gist() {
+    self.perl;
+}

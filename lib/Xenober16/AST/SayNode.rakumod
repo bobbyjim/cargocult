@@ -1,13 +1,9 @@
 use Xenober16::AST::ASTNode;
 
-class Xenober16::AST::SayNode does Xenober16::AST::ASTNode {
-	has $.expr;  # The expression to say
+unit class Xenober16::AST::SayNode is Xenober16::AST::ASTNode;
 
-	method Str() { "SayNode(expression => '$.expr')" }
+has $.expression is required;
 
-	method dump($indent="") {
-		say $indent ~ "SayNode:" ~ self.line-info;
-		say $indent ~ "  expression: ";
-		$!expr ~~ Xenober16::AST::ASTNode ?? $!expr.dump($indent ~ "    ") !! say $indent ~ "    $!expr";
-	}
+method gist() {
+    "SAY " ~ $.expression.gist;
 }
