@@ -1,0 +1,31 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. MacroTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests macro system with constants and code macros.
+
+MACRO DIVISION.
+    META clamp(value: uint8, min: uint8, max: uint8) : uint8
+    BEGIN
+        IF value < min THEN
+            RETURN min;
+        END
+        IF value > max THEN
+            RETURN max;
+        END
+        RETURN value;
+    END clamp;
+
+DATA DIVISION.
+    VAR x: uint8;
+    VAR y: uint8;
+    VAR max: uint8;
+    VAR result: uint8;
+
+MAIN DIVISION.   
+    x := 200;
+    result := clamp(x, 0, 100);
+    SAY result;
+    
+    SAY "Macro test complete";
+
+MODULE END.

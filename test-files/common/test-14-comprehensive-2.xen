@@ -1,0 +1,44 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ComprehensiveTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Combines all new features - FOR loops and memory areas.
+
+MEMORY DIVISION.
+    AREA screen RAM($0400) SIZE 1000;
+    AREA color_ram RAM($D800) SIZE 1000;
+
+DATA DIVISION.
+    VAR i: uint8;
+    VAR j: uint8;
+    VAR color: uint8;
+
+PROCEDURE DIVISION.
+    FN clear_screen()
+        FOR i := 0 TO 999 DO
+            screen[i] := 32;
+            color_ram[i] := 14;
+        END
+    END
+
+MAIN DIVISION.
+    SAY "Comprehensive feature test";
+    
+    SAY "Clearing screen with FOR loop";
+    clear_screen();
+    
+    SAY "Writing pattern to screen";
+    color := 1;
+    FOR i := 0 TO 24 DO
+        FOR j := 0 TO 39 DO
+            screen[i * 40 + j] := 160;
+            color_ram[i * 40 + j] := color;
+        END
+        color := color + 1;
+        IF color > 15 THEN
+            color := 1;
+        END
+    END
+    
+    SAY "All features tested successfully";
+
+MODULE END.

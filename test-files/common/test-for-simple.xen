@@ -1,0 +1,14 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ForSimple.
+    AUTHOR. Test.
+    DESCRIPTION. Minimal FOR test.
+
+DATA DIVISION.
+    VAR i: uint8;
+
+MAIN DIVISION.
+    FOR i := 1 TO 3 DO
+        SAY i;
+    END
+
+MODULE END.

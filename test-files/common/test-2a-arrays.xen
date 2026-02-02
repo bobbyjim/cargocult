@@ -1,0 +1,56 @@
+MODULE IDENTIFICATION DIVISION.
+	MODULE-ID. ArrayTest.
+	AUTHOR. Rob.
+	DESCRIPTION. Tests array declarations, indexing, and operations.
+
+DATA DIVISION.
+	VAR scores: array[10] of uint8;
+	VAR positions: array[5] of uint16;
+	VAR message: array[32] of char;
+	VAR counter: uint8;
+	VAR value: uint8;
+	VAR sum: uint16;
+
+MAIN DIVISION.
+	SAY "Test 1: Array initialization";
+	scores[0] := 100;
+	scores[1] := 85;
+	scores[2] := 92;
+	SAY scores[0];
+	SAY scores[1];
+	SAY scores[2];
+
+	SAY "Test 2: Array loop initialization";
+	FOR counter := 0 TO 9 DO
+		scores[counter] := counter * 10;
+	END
+	SAY scores[5];
+
+	SAY "Test 3: 16-bit array";
+	positions[0] := 0;
+	positions[1] := 100;
+	positions[2] := 200;
+	positions[3] := 300;
+	SAY positions[0];
+	SAY positions[2];
+
+	SAY "Test 4: Array summation"; 
+	sum := 0;
+	FOR counter := 0 TO 4 DO
+		sum := sum + positions[counter];
+	END
+	SAY sum;
+
+	SAY "Test 5: Char array (string-like)"; 
+	message[0] := 72; 
+	message[1] := 105; 
+	message[2] := 33;
+	SAY message[0];
+	SAY message [1];
+
+	SAY "Test 6: Array bounds (within bounds)"; 
+	value := scores[9];
+	SAY value;
+	
+	SAY "Array tests complete";
+MODULE END.

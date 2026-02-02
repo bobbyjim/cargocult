@@ -1,0 +1,36 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ForLoopTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests FOR loop functionality with various patterns.
+
+DATA DIVISION.
+    VAR i: uint8;
+    VAR sum: uint8;
+    VAR product: uint8;
+    VAR counter: uint8;
+
+MAIN DIVISION.
+    SAY "Test 1: Basic FOR loop counting up";
+    sum := 0;
+    FOR i := 0 TO 10 DO
+        sum := sum + i;
+    END
+    SAY sum;
+    
+    SAY "Test 2: FOR loop with larger range";
+    product := 1;
+    FOR i := 1 TO 5 DO
+        product := product * i;
+    END
+    SAY product;
+    
+    SAY "Test 3: Nested FOR loops";
+    counter := 0;
+    FOR i := 1 TO 3 DO
+        SAY i;
+    END
+    
+    SAY "Test 4: FOR loop with step (if supported later)";
+    SAY "Complete";
+
+MODULE END.

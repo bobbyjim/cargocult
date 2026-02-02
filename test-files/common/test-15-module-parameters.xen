@@ -1,0 +1,19 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. SpriteEngine.
+    PARAMETERS: max_sprites: uint8 := 8, sprite_size: uint8 := 64, enable_collision: uint8 := 1;
+    AUTHOR. Rob.
+    DESCRIPTION. AKA generic parameters or template parameters.
+
+DATA DIVISION.
+    VAR x: uint8;
+
+PROCEDURE DIVISION.
+    FN init()
+        SAY "Initializing";
+    END
+
+MAIN DIVISION.
+    x := 5;
+    SAY x;
+
+MODULE END.

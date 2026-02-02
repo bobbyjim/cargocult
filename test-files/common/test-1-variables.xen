@@ -1,0 +1,19 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. SimpleOutput.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests simple variable declarations, assignment, and output.
+
+DATA DIVISION.
+    VAR message: uint8;
+    VAR counter: uint8;
+
+MAIN DIVISION.
+    message := 65;
+    SAY message;
+    
+    counter := 42;
+    SAY counter;
+    
+    SAY "Hello, Commander X16!";
+
+MODULE END.

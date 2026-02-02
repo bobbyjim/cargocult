@@ -1,0 +1,337 @@
+This EBNF:
+
+* Uses { ... } for zero-or-more repetition and [ ... ] for optional elements.
+* Braces {} are used for record and array initializations.
+* Trailing semicolons are made optional where needed (MAIN DIVISION, loops).
+* Maintains all the retro-X16 flavor while being clear and hierarchical.
+
+Xenober16 ::=
+    ProgramIdentificationDivision
+    [ImportDivision]
+    [ConstantsDivision]
+    [MemoryDivision]
+    [MacroDivision]
+    [DataDivision]
+    [EnumDivision]
+    [ProcedureDivision]
+    [MainDivision]
+    EndModule
+;
+
+ProgramIdentificationDivision ::=
+    "MODULE IDENTIFICATION DIVISION." 
+    ModuleID
+    [ModuleParameters]
+    [Author]
+    [Description]
+    [Purpose]
+;
+
+ModuleID ::=
+    ("MODULE-ID." | "ID:") Identifier "."
+;
+
+ModuleParameters ::=
+    ("PARAMETERS" | "PARAMS:") ":" ParameterDeclList ";"
+;
+
+ParameterDeclList ::=
+    ParameterDecl { "," ParameterDecl }
+;
+
+ParameterDecl ::=
+    Identifier ":" Type [ParameterInit]
+;
+
+ParameterInit ::=
+    ":=" Expression
+;
+
+Author ::=
+    ("AUTHOR." | "WHO:" | "BY:") Identifier "."
+;
+
+Description ::=
+    ("DESCRIPTION." | "WHAT:" | "DESC:") RestOfLine
+;
+
+Purpose ::=
+    ("PURPOSE." | "WHY:") RestOfLine
+;
+
+ImportDivision ::=
+    "IMPORT DIVISION." Use+
+;
+
+Use ::=
+    "-" Identifier ";"
+;
+
+ConstantsDivision ::=
+    "CONSTANTS DIVISION." ConstantDeclaration+
+;
+
+ConstantDeclaration ::=
+    Identifier ( ":" Type "=" ConstantValue | ":=" ConstantValue ) ";"
+;
+
+ConstantValue ::=
+    Number | String
+;
+
+MemoryDivision ::=
+    "MEMORY DIVISION." Area+
+;
+
+Area ::=
+    "AREA" Identifier (RamArea | BankArea) "SIZE" Number ";"
+;
+
+RamArea ::=
+    "RAM" "(" Number ")"
+;
+
+BankArea ::=
+    "BANK" "(" Number "," Number ")"
+;
+
+MacroDivision ::=
+    "MACRO DIVISION." MacroDeclaration+
+;
+
+MacroDeclaration ::=
+    Identifier ":" MacroType "IS" Expression ";"
+;
+
+MacroType ::=
+    "int8" | "int16" | "byte" | "uint8" | "uint16" | "char" | "string"
+;
+
+DataDivision ::=
+    "DATA DIVISION." VariableDeclaration+
+;
+
+VariableDeclaration ::=
+    "VAR" Identifier ":" Type [AreaAnnotation] ";"
+;
+
+AreaAnnotation ::=
+    "AT" Identifier
+;
+
+Type ::=
+    ArrayType | BuiltinType | PointerType | InlineType | NamedType
+;
+
+ArrayType ::=
+    "array" "[" Number "]" "of" Type [ "=" "{" Expression { "," Expression } "}" ]
+;
+
+BuiltinType ::=
+    "uint16" | "uint8" | "int16" | "int8" | "string" | "char" | "byte"
+;
+
+PointerType ::=
+    "@" RecordTypeIdentifier
+;
+
+InlineType ::=
+    RecordType | EnumType
+;
+
+NamedType ::=
+    Identifier
+;
+
+RecordTypeIdentifier ::=
+    Identifier
+;
+
+RecordType ::=
+    "RECORD" { RecordField } "}"
+;
+
+RecordField ::=
+    Identifier ":" Type [BitfieldAnnotation] ";"
+;
+
+BitfieldAnnotation ::=
+    "@BITFIELD" "(" Number ")"
+;
+
+EnumType ::=
+    "ENUM" [Identifier] "{" EnumMember { "," EnumMember } "}" ";"
+;
+
+EnumMember ::=
+    Identifier [ "=" Number | ":=" Number ]
+;
+
+EnumDivision ::=
+    "ENUM DIVISION." EnumDeclaration+
+;
+
+EnumDeclaration ::=
+    EnumType
+;
+
+ProcedureDivision ::=
+    "PROCEDURE DIVISION." Procedure+
+;
+
+Procedure ::=
+    "FN" Identifier "(" [ParameterList] ")" { Statement } "END"
+;
+
+ParameterList ::=
+    Parameter { "," Parameter }
+;
+
+Parameter ::=
+    Identifier ":" Type
+;
+
+MainDivision ::=
+    "MAIN DIVISION." { Statement }
+;
+
+Statement ::=
+    KeywordStatement | SimpleStatement
+;
+
+KeywordStatement ::=
+    IfStatement | WhileLoop | ForLoop | RepeatLoop | CaseStatement
+;
+
+SimpleStatement ::=
+    Say | Echo | Assignment | ProcedureCall
+;
+
+ProcReturn ::=
+    "RETURN" Expression
+;
+
+Assignment ::=
+    Designator ":=" Expression ";"
+;
+
+Say ::=
+    "SAY" Expression ";"
+;
+
+Echo ::=
+    "ECHO" Expression ";"
+;
+
+IfStatement ::=
+    "IF" Expression ("THEN" | "DO") { Statement } 
+    { "ELSIF" Expression ("THEN" | "DO") { Statement } }
+    [ "ELSE" { Statement } ]
+    "END"
+;
+
+WhileLoop ::=
+    "WHILE" Expression "DO" { Statement } "END"
+;
+
+RepeatLoop ::=
+    ("REPEAT" | "LOOP") { Statement } "UNTIL" Expression ";"
+;
+
+ForLoop ::=
+    "FOR" Identifier ":=" Expression "TO" Expression "DO" { Statement } [";" ] "END"
+;
+
+ProcedureCall ::=
+    Identifier "(" [ArgumentList] ")" ";"
+;
+
+ArgumentList ::=
+    Expression { "," Expression }
+;
+
+CaseStatement ::=
+    "CASE" Comparison "OF" { CaseWhen } [ "ELSE" { Statement } ] "END"
+;
+
+CaseWhen ::=
+    "|" CaseSelector { "," CaseSelector } ":" { Statement }
+;
+
+CaseSelector ::=
+    Range | Number | Designator
+;
+
+Expression ::=
+    Comparison
+;
+
+Comparison ::=
+    MathSum { CompareOperator MathSum }
+;
+
+MathSum ::=
+    MathProduct { AddOperator MathProduct }
+;
+
+MathProduct ::=
+    Factor { MulOperator Factor }
+;
+
+Factor ::=
+      "(" Expression ")"
+    | RamAccess
+    | BankAccess
+    | Number
+    | String
+    | Designator
+    | "~" Factor
+;
+
+RamAccess ::=
+    "RAM" "[" Expression "]"
+;
+
+BankAccess ::=
+    "BANK" "(" Expression ")" "[" Expression "]"
+;
+
+Designator ::=
+    Qualident { Selector }
+;
+
+Qualident ::=
+    [ Identifier "." ] Identifier
+;
+
+Selector ::=
+    "[" Expression "]" | "." Identifier
+;
+
+Range ::=
+    Number ".." Number
+;
+
+Identifier ::=
+    ? letter (letter | digit | "_" | "-")* ?
+;
+
+Number ::=
+    DecimalNumber | HexNumber
+;
+
+DecimalNumber ::=
+    ? digit+ ?
+;
+
+HexNumber ::=
+    "$" ? [0-9A-Fa-f]+ ?
+;
+
+String ::=
+    "\"" ? ( any character except "\"" or escaped char )* ? "\""
+;
+
+RestOfLine ::=
+    ? any characters until newline ?
+;

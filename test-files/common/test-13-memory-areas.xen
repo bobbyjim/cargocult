@@ -1,0 +1,48 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. MemoryAreaTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests memory area declarations and direct access patterns.
+
+MEMORY DIVISION.
+    AREA screen RAM($0400) SIZE 1000;
+    AREA sprites RAM($0800) SIZE 1024;
+    AREA vic_regs RAM($D000) SIZE 47;
+    AREA color_ram RAM($D800) SIZE 1000;
+    AREA buffer BANK(1, $A000) SIZE 8192;
+
+DATA DIVISION.
+    VAR i: uint8;
+    VAR value: uint8;
+    VAR char_code: uint8;
+
+MAIN DIVISION.
+    SAY "Testing memory area access";
+    
+    SAY "Clearing screen area";
+    FOR i := 0 TO 40 DO
+        screen[i] := 32;
+    END
+    
+    SAY "Setting sprite data";
+    sprites[0] := 255;
+    sprites[1] := 129;
+    sprites[2] := 255;
+    
+    SAY "Configuring VIC registers";
+    vic_regs[32] := 14;
+    
+    SAY "Testing implicit RAM access";
+    RAM[$D020] := 6;
+    value := RAM[$DC01];
+    
+    SAY "Testing banked memory";
+    buffer[0] := 72;
+    buffer[1] := 101;
+    buffer[2] := 108;
+    
+    SAY "Direct bank access";
+    BANK(1)[$A100] := 42;
+    
+    SAY "Memory area test complete";
+
+MODULE END.

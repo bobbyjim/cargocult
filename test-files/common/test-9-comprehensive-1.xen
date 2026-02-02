@@ -1,0 +1,75 @@
+MODULE IDENTIFICATION DIVISION.
+    ID: AdvancedTest.
+    WHO: Rob.
+    WHAT: Comprehensive test combining multiple language features.
+
+CONSTANTS DIVISION.
+    screen-width: uint8 = 80;
+    screen-height: uint8 = 60;
+    max-iterations: uint8 = 100;
+
+MEMORY DIVISION.
+    AREA screen-buffer BANK(1, $a000) SIZE 4800;
+    AREA sprite-data RAM($0400) SIZE 1024;
+
+DATA DIVISION.
+    VAR x: uint8;
+    VAR y: uint8;
+    VAR counter: uint8;
+    VAR total: uint8;
+    VAR status: uint8;
+
+PROCEDURE DIVISION.
+    FN initialize()
+        x := 0;
+        y := 0;
+        counter := 0;
+        total := 0;
+        SAY "Initialized";
+    END
+    
+    FN calculate(a: uint8, b: uint8)
+        total := a + b;
+        IF total > screen-width THEN
+            total := screen-width;
+        END
+    END
+    
+    FN process-status(code: uint8)
+        CASE code OF
+            | 0: SAY "Ready";
+            | 1..5: SAY "Processing";
+            | 6..10: SAY "Complete";
+        ELSE
+            SAY "Error";
+        END
+    END
+
+MAIN DIVISION.
+    initialize();
+    
+    SAY "Starting main loop";
+    counter := 0;
+    WHILE counter < 10 DO
+        x := counter * 2;
+        y := counter + 5;
+        calculate(x, y);
+        SAY total;
+        counter := counter + 1;
+    END
+    
+    status := 3;
+    process-status(status);
+    
+    SAY "Testing conditional";
+    IF counter >= max-iterations THEN
+        SAY "Max iterations reached";
+    ELSIF counter > 5 THEN
+        SAY "Some iterations completed";
+    ELSE
+        SAY "Few iterations";
+    END
+    
+    SAY "Program complete";
+
+MODULE END.

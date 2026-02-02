@@ -1,8 +1,100 @@
 # Xenober16 Test Suite
 
-This directory contains a progressive test suite for the Xenober16 language, designed to test features incrementally from simplest to most complex.
+This directory contains a comprehensive test suite for the Xenober16 language, organized into three focused test suites that share common test resources. Each suite isolates a different layer of the compiler pipeline, enabling efficient debugging and preventing cascading issues.
 
-## Test Files Overview
+## Directory Organization
+
+```
+test-files/
+├── common/          # Shared test case files (all suites use these)
+│   ├── test-*.xen   # Comprehensive test cases (test-0 through test-16)
+│   └── expected-p8/ # Expected Prog8 output for transpiler validation
+├── grammar/         # Parser grammar tests (parse-only, no ASTBuilder)
+├── ast/             # ASTBuilder semantic tests (parse + AST validation)
+├── transpiler/      # Transpiler tests (full pipeline to Prog8)
+└── interpreter/     # Interpreter tests (program execution)
+```
+
+## Test Suites
+
+### common/ - Shared Test Resources
+**All test files are here for use by all three test suites.** This ensures a single source of truth.
+
+**Contents:**
+- `test-0-minimal.xen` through `test-16-enum.xen` - Comprehensive feature tests covering all grammar rules
+- `expected-p8/` - Expected Prog8 outputs for transpiler validation
+
+### 1. **grammar/** - Parser Grammar Tests
+Tests **only** the parsing of the Xenober16 grammar. These tests verify that the grammar correctly accepts valid syntax **without** running the ASTBuilder.
+
+**Contents:**
+- `debug-parse.raku` - Debug script for individual grammar rule testing
+- References `common/*.xen` test files
+
+**Testing approach:** Parse files with grammar only (no `:actions`), validate parse success/failure
+
+**Run tests:**
+```bash
+raku grammar/debug-parse.raku
+```
+
+### 2. **ast/** - ASTBuilder Tests  
+Tests the semantic layer—verifying that parse trees are correctly transformed into well-formed Abstract Syntax Trees with proper node relationships and attributes.
+
+**Contents:**
+- `debug-call.raku`, `debug-expr.raku`, `debug-rep.raku`, `debug-sum.raku` - AST debugging scripts
+- References `common/*.xen` test files
+
+**Testing approach:** Parse files with `:actions(ASTBuilder)`, validate AST structure and attributes
+
+**Run tests:**
+```bash
+# AST validation test runner (create similar to transpiler runner)
+```
+
+### 3. **transpiler/** - Transpiler Tests
+Tests the complete transpilation pipeline from Xenober16 source code to Prog8 output. Validates output against expected files.
+
+**Contents:**
+- `test-transpiler.raku` - Main transpiler test runner
+- `transpile-prog8.raku` - Utility script for transpiling files
+- References `common/*.xen` test files and `common/expected-p8/` for output validation
+
+**Testing approach:** Parse + AST + transpile, compare output to expected files
+
+**Run tests:**
+```bash
+raku transpiler/test-transpiler.raku
+```
+
+### 4. **interpreter/** - Interpreter Tests
+Tests the interpreter/execution layer. Verifies that the interpreter correctly executes Xenober16 programs.
+
+**Contents:**
+- `xenober-test.raku` - Interpreter test runner
+- References `common/*.xen` test files for execution validation
+
+**Testing approach:** Parse + AST + interpret, validate execution results
+
+**Run tests:**
+```bash
+raku interpreter/xenober-test.raku
+```
+
+## Test Workflow
+
+When a test fails, the layered suite structure tells you exactly where to look:
+
+1. **Grammar test fails** → Grammar rule is broken
+2. **Grammar passes, AST test fails** → ASTBuilder is broken
+3. **AST passes, transpiler test fails** → Prog8Transpiler is broken
+4. **Transpiler passes, interpreter test fails** → Interpreter is broken
+
+This **isolation prevents cascading refactorings** where fixing one layer accidentally breaks another.
+
+---
+
+## Test Files Overview (Original Documentation)
 
 ### test-0.xen - Minimal Program
 **Purpose**: Tests the absolute minimum valid program structure.

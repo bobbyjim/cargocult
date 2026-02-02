@@ -13,6 +13,45 @@ Transpiling gives me shortcuts.  I don't need to implement:
 * aligning structs in memory (mostly)
 * resolving cross-module calls
 
+## Current Status
+
+✅ **Complete Parser** - Grammar with core language features
+✅ **AST Builder** - Full AST node hierarchy  
+✅ **Tree-Walk Interpreter** - Working interpreter for testing and debugging
+✅ **Prog8 Transpiler** - Transpiles to Prog8 for Commodore 64/Commander X16
+✅ **Test Suite** - 18 primary test files, 16/18 passing
+✅ **Arrays** - Full array support with indexing and memory area allocation
+✅ **Memory Areas** - Named memory regions with transparent array-like access
+✅ **Direct Memory Access** - RAM[$addr] and BANK(n)[$addr] syntax
+✅ **Procedures** - Function declarations with parameters and calls
+✅ **Control Flow** - IF/ELSIF/ELSE, WHILE, REPEAT, FOR, CASE statements
+✅ **Module Parameters** - Template parameters in IDENTIFICATION DIVISION
+✅ **ENUMs** - Named constant enumeration with custom values
+
+### Test Results
+- **16/18** core language tests passing
+- Arrays, memory areas, procedures, control flow all working
+- Remaining: String range syntax ('A'..'Z' literals)
+
+## Quick Start
+
+### Run a program with the interpreter:
+```bash
+raku -I lib xen16.raku test-files/test-14-comprehensive-2.xen
+```
+
+### Transpile to Prog8:
+```bash
+raku -I lib xen16.raku --transpile=prog8 test-files/test-14-comprehensive-2.xen
+```
+
+### Run transpiler test suite:
+```bash
+raku test-transpiler.raku
+```
+
+See [test-files/TRANSPILER-TESTS.md](test-files/TRANSPILER-TESTS.md) for detailed testing documentation.
+
 # Language Structure
 Note: The file passed to the xen16 command is the MAIN module.
 

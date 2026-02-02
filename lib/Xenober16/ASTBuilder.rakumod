@@ -16,6 +16,7 @@ use Xenober16::AST::EchoNode;
 use Xenober16::AST::IfNode;
 use Xenober16::AST::WhileNode;
 use Xenober16::AST::RepeatNode;
+use Xenober16::AST::ForNode;
 use Xenober16::AST::CaseNode;
 use Xenober16::AST::CallNode;
 use Xenober16::AST::BinaryOpNode;
@@ -23,32 +24,77 @@ use Xenober16::AST::IdentifierNode;
 use Xenober16::AST::NumberNode;
 use Xenober16::AST::StringNode;
 use Xenober16::AST::RangeNode;
+use Xenober16::AST::ReturnNode;
+use Xenober16::AST::RecordNode;
+use Xenober16::AST::EnumNode;
+use Xenober16::AST::MemoryRefNode;
+use Xenober16::AST::AreaAccessNode;
 
 # TOP level - builds the complete program AST
 method TOP($/) {
+my @macros        = $<macro-division> ?? @($<macro-division>.made) !! [];
+my @macro-consts  = @macros.grep(Xenober16::AST::ConstDeclNode);
+my @macro-procs   = @macros.grep(Xenober16::AST::ProcDeclNode);
+my @constants     = $<constants-division> ?? @($<constants-division>.made) !! [];
+@constants.append(@macro-consts) if @macro-consts;
+my @procedures    = $<procedure-division> ?? @($<procedure-division>.made) !! [];
+@procedures.append(@macro-procs) if @macro-procs;
+my @data          = $<data-division> ?? @($<data-division>.made) !! [];
+my @enums         = $<enum-division> ?? @($<enum-division>.made) !! [];
+@data.append(@enums);
+
 make Xenober16::AST::ProgramNode.new(
 identification => $<program-identification-division>.made,
 imports        => $<import-division> ?? @($<import-division>.made) !! [],
-constants      => $<constants-division> ?? @($<constants-division>.made) !! [],
+constants      => @constants,
 memory         => $<memory-division> ?? @($<memory-division>.made) !! [],
-data           => $<data-division> ?? @($<data-division>.made) !! [],
-procedures     => $<procedure-division> ?? @($<procedure-division>.made) !! [],
+data           => @data,
+procedures     => @procedures,
 main           => $<main-division> ?? @($<main-division>.made) !! [],
 );
 }
 
 # IDENTIFICATION DIVISION
 method program-identification-division($/) {
-make Xenober16::AST::IdentificationNode.new(
-module-id   => $<module-id>.made,
-author      => $<author> ?? $<author>.made !! Str,
-description => $<description> ?? $<description>.made !! Str,
-purpose     => $<purpose> ?? $<purpose>.made !! Str,
-);
+    my $module-id = ~$<module-id><identifier>;
+    my @params = $<module-parameters> ?? @($<module-parameters>.made) !! ();
+    make Xenober16::AST::IdentificationNode.new(
+        module-id   => $module-id,
+        parameters  => @params,
+        author      => $<author> ?? $<author>.made !! Str,
+        description => $<description> ?? $<description>.made !! Str,
+        purpose     => $<purpose> ?? $<purpose>.made !! Str,
+    );
 }
 
 method module-id($/) {
-make ~$<identifier>;
+    make ~$<identifier>;
+}
+
+method module-parameters($/) {
+    make $<parameter-decl-list>.made;
+}
+
+method parameter-decl($/) {
+    make {
+        name => ~$<identifier>,
+        type => $<type>.made,
+        default => $<parameter-init> ?? $<parameter-init>.made !! Nil,
+    };
+}
+
+method parameter-init($/) {
+    make $<expression>.made;
+}
+
+method parameter-decl-list($/) {
+    my @params = ($<parameter-decl>.made,);
+    for $/.list.flat -> $group {
+        if $group && $group<parameter-decl> {
+            @params.push($group<parameter-decl>.made);
+        }
+    }
+    make @params;
 }
 
 method author($/) {
@@ -92,6 +138,8 @@ if $<number> {
 make $<number>.made;
 } elsif $<string> {
 make $<string>.made;
+} elsif $<range> {
+make $<range>.made;
 }
 }
 
@@ -144,26 +192,148 @@ make $<macro-declaration>».made;
 }
 
 method macro-declaration($/) {
-# TODO: Create MacroNode when needed
-make {
-type       => 'Macro',
-name       => ~$<identifier>,
-macro-type => ~$<macro-type>,
-value      => $<simple-expression>.made,
-};
+    if $<simple-macro> {
+        make $<simple-macro>.made;
+    } elsif $<meta-macro> {
+        make $<meta-macro>.made;
+    }
 }
+
+method simple-macro($/) {
+    make Xenober16::AST::ConstDeclNode.new(
+        name => ~$<identifier>,
+        value => $<simple-expression>.made,
+    );
+}
+
+method meta-macro($/) {
+    my @params = $<parameter-list> ?? @($<parameter-list>.made) !! [];
+    my $return-type = $<type> ?? $<type>.made !! Nil;
+    make Xenober16::AST::ProcDeclNode.new(
+        name => ~$<identifier>[0],
+        parameters => @params,
+        return_type => $return-type,
+        body => $<statement>».made,
+    );
+}
+
+method simple-expression($/) {
+    if $<range> {
+        make $<range>.made;
+    } elsif $<string> {
+        make $<string>.made;
+    } elsif $<qualident> {
+        make $<qualident>.made;
+    } elsif $<number> {
+        make $<number>.made;
+    }
+}
+
 
 # DATA DIVISION
 method data-division($/) {
-make $<variable-declaration>».made;
+    make $<variable-declaration>».made;
+}
+
+method enum-division($/) {
+    make $<enum-declaration>».made;
+}
+
+method data-item($/) {
+    if $<variable-declaration> {
+        make $<variable-declaration>.made;
+    } elsif $<enum-type-definition> {
+        make $<enum-type-definition>.made;
+    }
+}
+
+method enum-type-definition($/) {
+    my @members = $<enum-member>».made;
+    make Xenober16::AST::EnumNode.new(
+        name => ~$<identifier>,
+        members => @members,
+    );
+}
+
+method enum-declaration($/) {
+    my @members = $<enum-members>.made;
+    make Xenober16::AST::EnumNode.new(
+        name => ~$<identifier>,
+        members => @members,
+    );
+}
+
+method enum-members($/) {
+    my @members = ($<enum-member>.made,);
+    for $/.list.flat -> $group {
+        if $group && $group<enum-member> {
+            @members.push($group<enum-member>.made);
+        }
+    }
+    make @members;
 }
 
 method variable-declaration($/) {
 make Xenober16::AST::VarDeclNode.new(
 name  => ~$<identifier>,
-vtype => ~$<type>,
+vtype => $<type>.made,
 area  => $<area-annotation> ?? $<area-annotation>.made !! Str,
 );
+}
+
+method type($/) {
+    if $<record-type> {
+        make $<record-type>.made;
+    } else {
+        # Primitive types - just stringify
+        make ~$/;
+    }
+}
+
+method record-type($/) {
+    make Xenober16::AST::RecordNode.new(
+        fields => $<record-field>».made,
+    );
+}
+
+method record-field($/) {
+    my $field = {
+        name => ~$<identifier>,
+    };
+    
+    # Check if this uses @BITFIELD(n) directly or a type with optional bitfield annotation
+    if $/[0]<BITFIELD> {
+        # Direct @BITFIELD form
+        $field<bitfield> = $/[0]<number>.made.value;
+        $field<type> = 'bitfield';
+    } else {
+        # Normal type form
+        $field<type> = $/[0]<type>.made // ~($/[0]<type>);
+        if $/[0]<bitfield-annotation> {
+            $field<bitfield> = $/[0]<bitfield-annotation>.made;
+        }
+    }
+    make $field;
+}
+
+method bitfield-annotation($/) {
+    make $<number>.made.value;
+}
+
+method enum-type($/) {
+    my @members = $<enum-member>».made;
+    make Xenober16::AST::EnumNode.new(
+        name => ~$<identifier>,
+        members => @members,
+    );
+}
+
+method enum-member($/) {
+    my $value = $<number> ?? $<number>.made !! Nil;
+    make {
+        name => ~$<identifier>,
+        value => $value,
+    };
 }
 
 method area-annotation($/) {
@@ -215,24 +385,55 @@ make $<assignment>.made;
 make $<say>.made;
 } elsif $<echo> {
 make $<echo>.made;
+} elsif $<variable-declaration> {
+make $<variable-declaration>.made;
 } elsif $<if-statement> {
 make $<if-statement>.made;
 } elsif $<while-loop> {
 make $<while-loop>.made;
 } elsif $<repeat-loop> {
 make $<repeat-loop>.made;
+} elsif $<for-loop> {
+make $<for-loop>.made;
 } elsif $<case-statement> {
 make $<case-statement>.made;
 } elsif $<procedure-call> {
 make $<procedure-call>.made;
+} elsif $<return-statement> {
+make $<return-statement>.made;
 }
 }
 
+method return-statement($/) {
+    make Xenober16::AST::ReturnNode.new(
+        expr => $<expression>.made,
+    );
+}
+
 method assignment($/) {
-make Xenober16::AST::AssignmentNode.new(
-target     => $<qualident>.made,
-expression => $<expression>.made,
-);
+    my $target = $<assign-target>.made;
+    
+    make Xenober16::AST::AssignmentNode.new(
+        target     => $target,
+        expression => $<expression>.made,
+    );
+}
+
+method assign-target($/) {
+    # Now assign-target is just a designator
+    make $<designator>.made;
+}
+
+method target-expr($/) {
+    my $target = Nil;
+    if $<qualident> {
+        $target = $<qualident>.made;
+    } elsif $<area-access> {
+        $target = $<area-access>.made;
+    } elsif $<memory-access> {
+        $target = $<memory-access>.made;
+    }
+    make $target;
 }
 
 method say($/) {
@@ -298,6 +499,17 @@ condition => $<expression>.made,
 );
 }
 
+method for-loop($/) {
+my $step = $<simple-expression>[2] ?? $<simple-expression>[2].made !! Xenober16::AST::NumberNode.new(value => 1);
+make Xenober16::AST::ForNode.new(
+variable => ~$<identifier>,
+start    => $<simple-expression>[0].made,
+end      => $<simple-expression>[1].made,
+step     => $step,
+body     => @($<statement>».made),
+);
+}
+
 method case-statement($/) {
 # Build case branches (as hashes since they mix selectors and statements)
 my @branches = [];
@@ -327,16 +539,16 @@ if $<range> {
 make $<range>.made;
 } elsif $<number> {
 make $<number>.made;
-} elsif $<qualident> {
-make $<qualident>.made;
+} elsif $<designator> {
+make $<designator>.made;
 }
 }
 
 method procedure-call($/) {
-make Xenober16::AST::CallNode.new(
-name      => ~$<identifier>,
-arguments => $<argument-list> ?? $<argument-list>.made !! [],
-);
+    make Xenober16::AST::CallNode.new(
+        name      => ~$<identifier>,
+        arguments => $<argument-list> ?? $<argument-list>.made !! [],
+    );
 }
 
 method argument-list($/) {
@@ -360,132 +572,153 @@ make $<comparison>.made;
 }
 }
 
+method arithmetic-expression($/) {
+    make $<math-sum>.made;
+}
+
 method comparison($/) {
-# First sum is direct capture
-my @sums = ($<sum>.made,);
-my @operators = ();
-
-# Additional sums and operators are in the repetition groups
-# Each repetition group is wrapped in an array, so we flatten
-for $/.list.flat -> $group {
-if $group && $group<sum> {
-# Extract operator - may be 1 or 2 characters (<=, >=, <>, or single char)
-my $str = $group.Str.trim;
-my $op;
-if $str.starts-with('<=') || $str.starts-with('>=') || $str.starts-with('<>') {
-$op = $str.substr(0, 2);
-} else {
-$op = $str.substr(0, 1);
-}
-@operators.push($op);
-@sums.push($group<sum>.made);
-}
+    my @sums = @($<math-sum>».made);
+    my @operators = @($<compare-operator>».Str);
+    
+    if @sums.elems == 1 {
+        make @sums[0];
+    } else {
+        # Build left-associative binary operations
+        my $result = @sums[0];
+        for 1..^@sums.elems -> $i {
+            $result = Xenober16::AST::BinaryOpNode.new(
+                op    => @operators[$i - 1],
+                left  => $result,
+                right => @sums[$i],
+            );
+        }
+        make $result;
+    }
 }
 
-if @sums.elems == 1 {
-make @sums[0];
-} else {
-# Has comparison operators
-make Xenober16::AST::BinaryOpNode.new(
-op    => @operators[0],
-left  => @sums[0],
-right => @sums[1],
-);
-}
-}
-
-method sum($/) {
-# First product is direct capture
-my @products = ($<product>.made,);
-my @operators = ();
-
-# Additional products and operators are in the repetition groups
-# Each repetition group is wrapped in an array, so we flatten
-for $/.list.flat -> $group {
-if $group && $group<product> {
-# Extract operator - first non-whitespace character
-my $str = $group.Str.trim;
-my $op = $str.substr(0, 1);  # First character is the operator
-@operators.push($op);
-@products.push($group<product>.made);
-}
+method math-sum($/) {
+    my @products = @($<math-product>».made);
+    my @operators = @($<add-operator>».Str);
+    
+    if @products.elems == 1 {
+        make @products[0];
+    } else {
+        # Build left-associative binary operations
+        my $result = @products[0];
+        for 1..^@products.elems -> $i {
+            $result = Xenober16::AST::BinaryOpNode.new(
+                op    => @operators[$i - 1],
+                left  => $result,
+                right => @products[$i],
+            );
+        }
+        make $result;
+    }
 }
 
-if @products.elems == 1 {
-make @products[0];
-} else {
-# Build left-associative binary operations
-my $result = @products[0];
-for 1..^@products.elems -> $i {
-$result = Xenober16::AST::BinaryOpNode.new(
-op    => @operators[$i - 1],
-left  => $result,
-right => @products[$i],
-);
-}
-make $result;
-}
-}
-
-method product($/) {
-# First factor is direct capture
-my @factors = ($<factor>.made,);
-my @operators = ();
-
-# Additional factors and operators are in the repetition groups
-# Each repetition group is wrapped in an array, so we flatten
-for $/.list.flat -> $group {
-if $group && $group<factor> {
-# Extract operator - first non-whitespace character
-my $str = $group.Str.trim;
-my $op = $str.substr(0, 1);  # First character is the operator
-@operators.push($op);
-@factors.push($group<factor>.made);
-}
-}
-
-if @factors.elems == 1 {
-make @factors[0];
-} else {
-# Build left-associative binary operations
-my $result = @factors[0];
-for 1..^@factors.elems -> $i {
-$result = Xenober16::AST::BinaryOpNode.new(
-op    => @operators[$i - 1],
-left  => $result,
-right => @factors[$i],
-);
-}
-make $result;
-}
+method math-product($/) {
+    my @factors = @($<factor>».made);
+    my @operators = @($<mul-operator>».Str);
+    
+    if @factors.elems == 1 {
+        make @factors[0];
+    } else {
+        # Build left-associative binary operations
+        my $result = @factors[0];
+        for 1..^@factors.elems -> $i {
+            $result = Xenober16::AST::BinaryOpNode.new(
+                op    => @operators[$i - 1],
+                left  => $result,
+                right => @factors[$i],
+            );
+        }
+        make $result;
+    }
 }
 
 method factor($/) {
-if $<number> {
-make $<number>.made;
-} elsif $<string> {
-make $<string>.made;
-} elsif $<qualident> {
-make $<qualident>.made;
-} elsif $<expression> {
-make $<expression>.made;  # Parenthesized expression
-}
-}
-
-method simple-expression($/) {
-if $<string> {
-make $<string>.made;
-} elsif $<qualident> {
-make $<qualident>.made;
+if $<ram-access> {
+    make $<ram-access>.made;
+} elsif $<bank-access> {
+    make $<bank-access>.made;
 } elsif $<number> {
-make $<number>.made;
+    make $<number>.made;
+} elsif $<string> {
+    make $<string>.made;
+} elsif $<designator> {
+    make $<designator>.made;
+} elsif $<expression> {
+    make $<expression>.made;  # Parenthesized expression
 }
 }
 
 method qualident($/) {
-make Xenober16::AST::IdentifierNode.new(
-name => ~$<identifier>,
-);
+    # Simple qualified identifier (optional module.name)
+    my @parts = @($<identifier>);
+    my $name = @parts > 1 ?? "{@parts[0]}.{@parts[1]}" !! ~@parts[0];
+    
+    make Xenober16::AST::IdentifierNode.new(
+        name => $name,
+        indices => [],
+    );
+}
+
+method designator($/) {
+    # Designator: qualident with optional selectors (array indexing, field access)
+    my $node = $<qualident>.made;
+    
+    # Apply selectors (indices and field accesses)
+    my @selectors = @($<selector>);
+    for @selectors -> $selector {
+        if $selector.ast<indices> {
+            # Array index selector
+            $node.indices.push: $selector.ast<indices>;
+        } elsif $selector.ast<field> {
+            # Field access - would need to extend AST node
+            # For now, just add to indices (placeholder)
+            $node.indices.push: $selector.ast<field>;
+        }
+    }
+    
+    make $node;
+}
+
+method selector($/) {
+    # Selector is either array index or field access
+    if $<expression> {
+        make { indices => $<expression>.made };
+    } elsif $<identifier> {
+        make { field => ~$<identifier> };
+    }
+}
+
+method memory-access($/) {
+    if $<ram-access> {
+        make $<ram-access>.made;
+    } elsif $<bank-access> {
+        make $<bank-access>.made;
+    }
+}
+
+method ram-access($/) {
+    my $addr = $<expression>.made;
+    make Xenober16::AST::MemoryRefNode.new(:address($addr));
+}
+
+method bank-access($/) {
+    my $bank = $<expression>[0].made;
+    my $addr = $<expression>[1].made;
+    make Xenober16::AST::MemoryRefNode.new(:bank($bank), :address($addr));
+}
+
+method area-access($/) {
+    my $area-name = ~$<identifier>;
+    my $index = $<expression>.made;
+    make Xenober16::AST::AreaAccessNode.new(:$area-name, :$index);
+}
+
+method array-index($/) {
+    make $<expression>.made;
 }
 
 method identifier($/) {
@@ -520,19 +753,23 @@ radix => 10,
 method string($/) {
 # Remove quotes from the string
 my Str $str = ~$/;
-$str .= subst(/^\"/, '');
-$str .= subst(/\"$/, '');
+if $str.starts-with('"') {
+    $str = $str.substr(1, $str.chars - 2);
+} elsif $str.starts-with("'") {
+    $str = $str.substr(1, $str.chars - 2);
+}
 make Xenober16::AST::StringNode.new(
 value => $str,
 );
 }
 
 method range($/) {
-my @numbers = $<number>».made;
-make Xenober16::AST::RangeNode.new(
-start => @numbers[0].value,
-end   => @numbers[1].value,
-);
+    my $start = $<string>[0] ?? ~$<string>[0] !! $<number>[0].made.value;
+    my $end   = $<string>[1] ?? ~$<string>[1] !! $<number>[1].made.value;
+    make Xenober16::AST::RangeNode.new(
+        start => $start,
+        end   => $end,
+    );
 }
 
 method rest-of-line($/) {

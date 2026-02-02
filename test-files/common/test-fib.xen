@@ -1,0 +1,31 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. FibonacciTest.
+    AUTHOR. AI_Assistant.
+    DESCRIPTION. Generates Fibonacci numbers using only the language reference.
+
+CONSTANTS DIVISION.
+    MAX_FIBONACCI := 10;
+
+DATA DIVISION.
+    VAR n: uint8;
+    VAR a: uint8;
+    VAR b: uint8;
+    VAR temp: uint8;
+
+MAIN DIVISION.
+    a := 0;
+    b := 1;
+    SAY "Fibonacci sequence:";
+    SAY a;
+    SAY b;
+    
+    FOR n := 2 TO MAX_FIBONACCI DO
+        temp := a + b;
+        SAY temp;
+        a := b;
+        b := temp;
+    END
+    
+    SAY "Done!";
+
+MODULE END.

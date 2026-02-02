@@ -1,0 +1,13 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. SimpleTest.
+    AUTHOR. Test.
+    DESCRIPTION. Test simple assignment.
+
+DATA DIVISION.
+    VAR x: uint8;
+
+MAIN DIVISION.
+    x := 42;
+    SAY x;
+
+MODULE END.

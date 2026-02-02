@@ -1,0 +1,25 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. ExpressionTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests arithmetic expressions and operator precedence.
+
+DATA DIVISION.
+    VAR result: uint8;
+    VAR value: uint8;
+
+MAIN DIVISION.
+    value := 10;
+    
+    result := value * 2 + 5;
+    SAY result;
+    
+    result := (value + 5) * 2;
+    SAY result;
+    
+    result := value * 2 + 1 * 10;
+    SAY result;
+    
+    result := value - 3 + 2;
+    SAY result;
+
+MODULE END.

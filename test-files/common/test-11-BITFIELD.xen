@@ -1,0 +1,27 @@
+MODULE IDENTIFICATION DIVISION.
+    MODULE-ID. BitfieldTest.
+    AUTHOR. Rob.
+    DESCRIPTION. Tests bitfield-like operations with simple types.
+
+DATA DIVISION.
+    VAR flags: uint16;
+    VAR sprite_attr: uint16;
+    VAR status: uint8;
+
+MAIN DIVISION.
+    SAY "Testing bitfield operations";
+    
+    flags := 0;
+    flags := flags + 1;
+    status := flags;
+    
+    SAY "Bitfield values set";
+    
+    sprite_attr := 0;
+    sprite_attr := sprite_attr + 64;
+    
+    SAY "Sprite attributes configured";
+    
+    SAY "Bitfield test complete";
+
+MODULE END.
