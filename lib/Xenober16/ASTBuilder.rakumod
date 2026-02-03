@@ -28,6 +28,13 @@ use Xenober16::AST::ReturnNode;
 use Xenober16::AST::RecordNode;
 use Xenober16::AST::EnumNode;
 use Xenober16::AST::MemoryRefNode;
+use Xenober16::AST::NumberLiteralNode;
+use Xenober16::AST::StringLiteralNode;
+use Xenober16::AST::ArrayInitNode;
+use Xenober16::AST::RecordInitNode;
+use Xenober16::AST::EnumValueNode;
+use Xenober16::AST::SimpleMacroNode;
+use Xenober16::AST::FuncMacroNode;
 use Xenober16::AST::AreaAccessNode;
 
 # TOP level - builds the complete program AST
@@ -194,26 +201,27 @@ make $<macro-declaration>».made;
 method macro-declaration($/) {
     if $<simple-macro> {
         make $<simple-macro>.made;
-    } elsif $<meta-macro> {
-        make $<meta-macro>.made;
+    } elsif $<function-like-macro> {
+        make $<function-like-macro>.made;
     }
 }
 
 method simple-macro($/) {
-    make Xenober16::AST::ConstDeclNode.new(
+    make Xenober16::AST::SimpleMacroNode.new(
         name => ~$<identifier>,
-        value => $<simple-expression>.made,
+        type => ~$<macro-type>,
+        value => $<nested-init>.made,
     );
 }
 
-method meta-macro($/) {
+method function-like-macro($/) {
     my @params = $<parameter-list> ?? @($<parameter-list>.made) !! [];
-    my $return-type = $<type> ?? $<type>.made !! Nil;
-    make Xenober16::AST::ProcDeclNode.new(
+    my $return-type = $<type> ?? ~$<type> !! Nil;
+    make Xenober16::AST::FuncMacroNode.new(
         name => ~$<identifier>[0],
         parameters => @params,
         return_type => $return-type,
-        body => $<statement>».made,
+        body => @($<statement>».made),
     );
 }
 
@@ -379,32 +387,48 @@ make $<statement>».made;
 
 # STATEMENTS
 method statement($/) {
-if $<assignment> {
-make $<assignment>.made;
-} elsif $<say> {
-make $<say>.made;
-} elsif $<echo> {
-make $<echo>.made;
-} elsif $<variable-declaration> {
-make $<variable-declaration>.made;
-} elsif $<if-statement> {
-make $<if-statement>.made;
-} elsif $<while-loop> {
-make $<while-loop>.made;
-} elsif $<repeat-loop> {
-make $<repeat-loop>.made;
-} elsif $<for-loop> {
-make $<for-loop>.made;
-} elsif $<case-statement> {
-make $<case-statement>.made;
-} elsif $<procedure-call> {
-make $<procedure-call>.made;
-} elsif $<return-statement> {
-make $<return-statement>.made;
+    if $<keyword-statement> {
+        make $<keyword-statement>.made;
+    } elsif $<simple-statement> {
+        make $<simple-statement>.made;
+    }
 }
+
+method keyword-statement($/) {
+    if $<if-statement> {
+        make $<if-statement>.made;
+    } elsif $<while-loop> {
+        make $<while-loop>.made;
+    } elsif $<for-loop> {
+        make $<for-loop>.made;
+    } elsif $<repeat-loop> {
+        make $<repeat-loop>.made;
+    } elsif $<case-statement> {
+        make $<case-statement>.made;
+    }
+}
+
+method simple-statement($/) {
+    if $<say> {
+        make $<say>.made;
+    } elsif $<echo> {
+        make $<echo>.made;
+    } elsif $<assignment> {
+        make $<assignment>.made;
+    } elsif $<procedure-call> {
+        make $<procedure-call>.made;
+    } elsif $<proc-return> {
+        make $<proc-return>.made;
+    }
 }
 
 method return-statement($/) {
+    make Xenober16::AST::ReturnNode.new(
+        expr => $<expression>.made,
+    );
+}
+
+method proc-return($/) {
     make Xenober16::AST::ReturnNode.new(
         expr => $<expression>.made,
     );
@@ -437,15 +461,15 @@ method target-expr($/) {
 }
 
 method say($/) {
-make Xenober16::AST::SayNode.new(
-expression => $<simple-expression>.made,
-);
+    make Xenober16::AST::SayNode.new(
+        expression => $<expression>.made,
+    );
 }
 
 method echo($/) {
-make Xenober16::AST::EchoNode.new(
-expression => $<simple-expression>.made,
-);
+    make Xenober16::AST::EchoNode.new(
+        expression => $<expression>.made,
+    );
 }
 
 method if-statement($/) {
@@ -500,14 +524,18 @@ condition => $<expression>.made,
 }
 
 method for-loop($/) {
-my $step = $<simple-expression>[2] ?? $<simple-expression>[2].made !! Xenober16::AST::NumberNode.new(value => 1);
-make Xenober16::AST::ForNode.new(
-variable => ~$<identifier>,
-start    => $<simple-expression>[0].made,
-end      => $<simple-expression>[1].made,
-step     => $step,
-body     => @($<statement>».made),
-);
+    # FOR var := start TO end DO statements END
+    # Extract start and end from the two expression captures
+    my @exprs = @($<expression>);
+    my $start = @exprs[0].made;
+    my $end = @exprs[1].made;
+    make Xenober16::AST::ForNode.new(
+        variable => ~$<identifier>,
+        start    => $start,
+        end      => $end,
+        step     => Xenober16::AST::NumberNode.new(value => 1),
+        body     => @($<statement>».made),
+    );
 }
 
 method case-statement($/) {
@@ -664,10 +692,10 @@ method qualident($/) {
 }
 
 method designator($/) {
-    # Designator: qualident with optional selectors (array indexing, field access)
+    # Designator: qualident with optional selectors (array indexing, field access, or function calls)
     my $node = $<qualident>.made;
     
-    # Apply selectors (indices and field accesses)
+    # Apply selectors
     my @selectors = @($<selector>);
     for @selectors -> $selector {
         if $selector.ast<indices> {
@@ -677,6 +705,13 @@ method designator($/) {
             # Field access - would need to extend AST node
             # For now, just add to indices (placeholder)
             $node.indices.push: $selector.ast<field>;
+        } elsif $selector.ast<call> {
+            # Function call - convert to CallNode
+            my @args = @($selector.ast<call> // []);
+            $node = Xenober16::AST::CallNode.new(
+                name => $node.name,
+                arguments => @args,
+            );
         }
     }
     
@@ -684,11 +719,16 @@ method designator($/) {
 }
 
 method selector($/) {
-    # Selector is either array index or field access
+    # Selector can be array index, field access, or function call
+    # Array indexing: [expr]
     if $<expression> {
         make { indices => $<expression>.made };
+    # Field access: .identifier
     } elsif $<identifier> {
         make { field => ~$<identifier> };
+    # Function call in expression context
+    } elsif $<argument-list> {
+        make { call => $<argument-list>.made };
     }
 }
 
@@ -726,12 +766,67 @@ make ~$/;
 }
 
 # LITERALS
-method number($/) {
-if $<hex-number> {
-make $<hex-number>.made;
-} elsif $<dec-number> {
-make $<dec-number>.made;
+
+# INITIALIZATION EXPRESSIONS (nested-init)
+# These produce distinct literal node types for better semantic clarity
+
+method nested-init($/) {
+    if $<number> {
+        # Number literal → NumberLiteralNode
+        my $num = $<number>.made;
+        make Xenober16::AST::NumberLiteralNode.new(
+            value => $num.value,
+            radix => $num.radix,
+        );
+    } elsif $<string> {
+        # String literal → StringLiteralNode
+        my $str = $<string>.made;
+        make Xenober16::AST::StringLiteralNode.new(
+            value => $str.value,
+        );
+    } elsif $<record-init> {
+        make $<record-init>.made;
+    } elsif $<enum-init> {
+        make $<enum-init>.made;
+    } elsif $<array-init> {
+        make $<array-init>.made;
+    }
 }
+
+method nested-init-list($/) {
+    my @inits = @($<nested-init>);
+    make @inits;
+}
+
+method record-init($/) {
+    my @elements = @($<nested-init-list>.made // []);
+    make Xenober16::AST::RecordInitNode.new(
+        fields => @elements,
+    );
+}
+
+method enum-init($/) {
+    my @elements = @($<nested-init-list>.made // []);
+    my $value = @elements && @elements[0].can('value') ?? @elements[0].value !! Nil;
+    make Xenober16::AST::EnumValueNode.new(
+        name => "ENUM",
+        value => $value,
+    );
+}
+
+method array-init($/) {
+    my @elements = @($<nested-init-list>.made // []);
+    make Xenober16::AST::ArrayInitNode.new(
+        elements => @elements,
+    );
+}
+
+method number($/) {
+    if $<hex-number> {
+        make $<hex-number>.made;
+    } elsif $<dec-number> {
+        make $<dec-number>.made;
+    }
 }
 
 method hex-number($/) {
